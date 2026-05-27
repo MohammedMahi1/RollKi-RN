@@ -1,77 +1,152 @@
-import { View, Text, Image, Pressable } from 'react-native';
-import React from 'react';
+import { View, Image, Pressable, useWindowDimensions } from 'react-native';
+import React, { useState } from 'react';
 import { ArticleType } from 'types';
 import Span from 'components/Span';
-import {Bookmark, Compass, Heart}from "lucide-react-native"
-// {
-//   "title": "Axolotl",
-//   "description": "Species of amphibian",
-//   "extract": "The axolotl is a paedomorphic salamander closely related to the tiger salamander...",
-//   "thumbnail": {
-//     "source": "https://upload.wikimedia.org/.../axolotl.jpg",
-//     "width": 320,
-//     "height": 240
-//   },
-//   "content_urls": {
-//     "mobile": { "page": "https://en.m.wikipedia.org/wiki/Axolotl" }
-//   }
-// }
-const SideTip = ()=>{
-    return (
-        <View style={{
-            position: 'absolute',
-            bottom: 60,
-            right: 24,
-            backgroundColor: '#00000058',
-            borderRadius: 20,
-            paddingHorizontal: 10,
-            paddingVertical: 12,
-            gap: 16,
-        }}>
-            <Pressable> 
-              <Heart size={28} color={"#ffffff"}/>
-            </Pressable>
-            <Pressable> 
-              <Bookmark size={28} color={"#ffffff"}/>
-            </Pressable>
-            <Pressable> 
-              <Compass size={28} color={"#ffffff"}/>
-            </Pressable>
-        </View>
-    )
-}
-type ArticleCardProps = {} & ArticleType;
-const ArticleCard = ({
-  content_urls,
-  description,
-  extract,
-  title,
-  thumbnail,
-}: ArticleCardProps) => {
+import { Bookmark, Compass, Heart } from "lucide-react-native"
+
+const SideTip = () => {
   return (
-    <View style={{ backgroundColor: '#000000', flex: 1, width: '100%' }}>
+    <View style={{
+      position: 'absolute',
+      bottom: 24, 
+      right: 24,
+      backgroundColor: 'rgba(0,0,0,0.75)', 
+      borderRadius: 24,
+      paddingHorizontal: 12,
+      paddingVertical: 18,
+      gap: 24,
+    }}>
+      <Pressable hitSlop={12}> 
+        <Heart size={26} color={"#ffffff"}/>
+      </Pressable>
+      <Pressable hitSlop={12}> 
+        <Bookmark size={26} color={"#ffffff"}/>
+      </Pressable>
+      <Pressable hitSlop={12}> 
+        <Compass size={26} color={"#ffffff"}/>
+      </Pressable>
+    </View>
+  )
+}
+
+interface ArticleCardProps {
+  item: ArticleType;
+  cardHeight: number;
+}
+
+const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
+  const { width: screenWidth } = useWindowDimensions();
+  const { title, description, extract, thumbnail, originalimage } = item;
+  
+  // Track if the native image loading fails dynamically
+  const [imageFailed, setImageFailed] = useState(false);
+
+  const rawImageUri = originalimage?.source || thumbnail?.source;
+  const sanitizedImageUri = rawImageUri ? decodeURIComponent(rawImageUri) : null;
+
+  const mediaContainerHeight = cardHeight * 0.55; 
+  const textContainerHeight = cardHeight * 0.45;  
+
+  // Determine if we have a viable image asset to display
+  const shouldShowImage = sanitizedImageUri && !imageFailed;
+
+  return (
+    <View style={{ backgroundColor: '#000000', height: cardHeight, width: screenWidth }}>
+      
+      {/* 1. MEDIA WINDOW */}
       <View
         style={{
-          backgroundColor: '#1a1a1a',
+          backgroundColor: '#161616',
           width: '100%',
-          height: '60%',
-          alignSelf: 'center',
-          justifyContent: 'center',
-          borderBottomRightRadius: 20,
-          borderBottomLeftRadius: 20,
+          height: mediaContainerHeight,
+          borderBottomRightRadius: 24,
+          borderBottomLeftRadius: 24,
           overflow: 'hidden',
+          position: 'relative',
+          justifyContent: 'center',
+          alignItems: 'center'
         }}>
-        <Image
-          source={{ uri: thumbnail.source }}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        {shouldShowImage ? (
+          <Image
+            source={{ 
+              uri: sanitizedImageUri,
+              // The Secret Sauce: Passes common mobile headers so Wikipedia processes the image stream
+              headers: {
+                'User-Agent': 'ScrolliaMobileApp/1.0 (contact: front-end developer; React Native)',
+                'Accept': 'image/jpeg,image/png,image/*;q=0.8'
+              }
+            }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+            onError={(e) => {
+              console.log(`Image failed to load for: ${title}`, e.nativeEvent.error);
+              setImageFailed(true);
+            }}
+          />
+        ) : (
+          /* Premium UI empty-state placeholder layout if image fails completely */
+          <View style={{ alignItems: 'center', gap: 12 }}>
+            <Compass size={48} color="rgba(255,255,255,0.15)" />
+            <Span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, letterSpacing: 1 }}>
+              NO MEDIA AVAILABLE
+            </Span>
+          </View>
+        )}
         <SideTip />
       </View>
-      <View style={{ padding: 24,}}>
-        <Span style={{ fontSize: 34}} fontWeight='bold'>{title}</Span>
-        <Span style={{ fontSize: 24}}>{description}</Span>
-        <Span style={{ fontSize: 14 }}>{extract}</Span>
+
+      {/* 2. CONTENT WINDOW */}
+      <View style={{ 
+        paddingHorizontal: 24, 
+        paddingTop: 24,
+        paddingBottom: 24, 
+        height: textContainerHeight, 
+        justifyContent: 'flex-start',
+        gap: 6
+      }}>
+        <Span 
+          style={{ fontSize: 30, color: '#FFFFFF', lineHeight: 36 }} 
+          fontWeight='bold' 
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {title}
+        </Span>
+        
+        {description ? (
+          <Span 
+            style={{ fontSize: 15, color: 'rgba(255, 255, 255, 0.4)', lineHeight: 20 }} 
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {description}
+          </Span>
+        ) : null}
+        
+        <Span 
+          style={{ 
+            fontSize: 14, 
+            color: 'rgba(255, 255, 255, 0.75)', 
+            lineHeight: 21,
+            marginTop: 4
+          }}
+          numberOfLines={5} 
+          ellipsizeMode="tail"
+        >
+          {extract}
+        </Span>
       </View>
+
+      {/* 3. ABSOLUTE SNAP LINE */}
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 2,
+        backgroundColor: 'rgba(0, 0, 0, 0.1)'
+      }} />
+
     </View>
   );
 };

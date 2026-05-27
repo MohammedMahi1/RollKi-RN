@@ -12,6 +12,7 @@ export interface ArticleType {
             page: string;
         };
     };
+    originalimage:any
 }
 // {
 //   "title": "Axolotl",
