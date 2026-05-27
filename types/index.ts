@@ -14,6 +14,28 @@ export interface ArticleType {
     };
     originalimage:any
 }
+
+export interface WikiArticle {
+  pageid: number;
+  ns: number;
+  title: string;
+  index: number;
+  thumbnail?: {
+    source: string;
+    width: number;
+    height: number;
+  };
+  extract?: string;
+}
+
+export interface WikiApiResponse {
+  query?: {
+    pages: {
+      [key: string]: WikiArticle;
+    };
+  };
+}
+
 // {
 //   "title": "Axolotl",
 //   "description": "Species of amphibian",

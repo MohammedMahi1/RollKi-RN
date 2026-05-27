@@ -2,11 +2,18 @@ import { createStaticNavigation, StaticParamList } from '@react-navigation/nativ
 import { createStackNavigator } from '@react-navigation/stack';
 import { BackButton } from '../components/BackButton';
 import Main from 'screens/Main';
+import ArticleScreen from 'screens/ArticleScreen';
 
 const Stack = createStackNavigator({
   screens: {
     Main: {
       screen: Main,
+    },
+    ArticleScreen: {
+      screen: ArticleScreen,
+      options:{
+        animation:"slide_from_right"
+      }
     },
   },
   screenOptions:{

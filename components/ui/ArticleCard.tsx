@@ -1,8 +1,27 @@
 import { View, Image, Pressable, useWindowDimensions } from 'react-native';
 import React, { useState } from 'react';
-import { ArticleType } from 'types';
 import Span from 'components/Span';
-import { Bookmark, Compass, Heart } from "lucide-react-native"
+import { Bookmark, Compass, Heart } from "lucide-react-native";
+import { useNavigation } from '@react-navigation/native';
+
+// 1. Explicit Typing Contract
+interface WikiArticle {
+  pageid: number;
+  ns: number;
+  title: string;
+  index: number;
+  thumbnail?: {
+    source: string;
+    width: number;
+    height: number;
+  };
+  extract?: string;
+}
+
+interface ArticleCardProps {
+  item: WikiArticle;
+  cardHeight: number;
+}
 
 const SideTip = () => {
   return (
@@ -26,32 +45,26 @@ const SideTip = () => {
         <Compass size={26} color={"#ffffff"}/>
       </Pressable>
     </View>
-  )
-}
-
-interface ArticleCardProps {
-  item: ArticleType;
-  cardHeight: number;
-}
+  );
+};
 
 const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
-  const { width: screenWidth } = useWindowDimensions();
-  const { title, description, extract, thumbnail, originalimage } = item;
-  
-  // Track if the native image loading fails dynamically
-  const [imageFailed, setImageFailed] = useState(false);
 
-  const rawImageUri = originalimage?.source || thumbnail?.source;
+  const nav = useNavigation<any>();
+
+  const { width: screenWidth } = useWindowDimensions();
+  const { title, extract, thumbnail } = item;
+  
+
+  // Updated image fallback pipeline to match WikiArticle properties
+  const rawImageUri = thumbnail?.source;
   const sanitizedImageUri = rawImageUri ? decodeURIComponent(rawImageUri) : null;
 
   const mediaContainerHeight = cardHeight * 0.55; 
   const textContainerHeight = cardHeight * 0.45;  
-
-  // Determine if we have a viable image asset to display
-  const shouldShowImage = sanitizedImageUri && !imageFailed;
-
+  
   return (
-    <View style={{ backgroundColor: '#111111', height: cardHeight, width: screenWidth }}>
+    <View style={{ backgroundColor: '#000000', height: cardHeight, width: screenWidth }}>
       
       {/* 1. MEDIA WINDOW */}
       <View
@@ -66,44 +79,38 @@ const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-        {shouldShowImage ? (
           <Image
             source={{ 
               uri: sanitizedImageUri,
-              // The Secret Sauce: Passes common mobile headers so Wikipedia processes the image stream
               headers: {
-                'User-Agent': 'ScrolliaMobileApp/1.0 (contact: front-end developer; React Native)',
-                'Accept': 'image/jpeg,image/png,image/*;q=0.8'
+                'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)',
               }
             }}
             style={{ width: '100%', height: '100%' }}
             resizeMode="cover"
             onError={(e) => {
               console.log(`Image failed to load for: ${title}`, e.nativeEvent.error);
-              setImageFailed(true);
             }}
           />
-        ) : (
-          /* Premium UI empty-state placeholder layout if image fails completely */
-          <View style={{ alignItems: 'center', gap: 12 }}>
-            <Compass size={48} color="rgba(255,255,255,0.15)" />
-            <Span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, letterSpacing: 1 }}>
-              NO MEDIA AVAILABLE
-            </Span>
-          </View>
-        )}
         <SideTip />
       </View>
 
       {/* 2. CONTENT WINDOW */}
-      <View style={{ 
-        paddingHorizontal: 24, 
-        paddingTop: 24,
-        paddingBottom: 24, 
-        height: textContainerHeight, 
-        justifyContent: 'flex-start',
-        gap: 6
-      }}>
+      <Pressable 
+        onPress={() => {
+          nav.navigate("ArticleScreen", {
+            title: title
+          });
+        }}
+        style={{ 
+          paddingHorizontal: 24, 
+          paddingTop: 24,
+          paddingBottom: 24, 
+          height: textContainerHeight, 
+          justifyContent: 'flex-start',
+          gap: 6
+        }}
+      >
         <Span 
           style={{ fontSize: 30, color: '#FFFFFF', lineHeight: 36 }} 
           fontWeight='bold' 
@@ -113,16 +120,7 @@ const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
           {title}
         </Span>
         
-        {description ? (
-          <Span 
-            style={{ fontSize: 15, color: 'rgba(255, 255, 255, 0.4)', lineHeight: 20 }} 
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {description}
-          </Span>
-        ) : null}
-        
+        {/* Note: Wikipedia API "extract" usually serves as both description and extract preview */}
         <Span 
           style={{ 
             fontSize: 14, 
@@ -133,20 +131,9 @@ const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
           numberOfLines={5} 
           ellipsizeMode="tail"
         >
-          {extract}
+          {extract || 'No preview available for this article.'}
         </Span>
-      </View>
-
-      {/* 3. ABSOLUTE SNAP LINE */}
-      <View style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 2,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)'
-      }} />
-
+      </Pressable>
     </View>
   );
 };

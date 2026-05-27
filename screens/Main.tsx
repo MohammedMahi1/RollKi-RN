@@ -1,74 +1,133 @@
-import { View, ActivityIndicator, useWindowDimensions, StatusBar, Platform } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import {
+  View,
+  ActivityIndicator,
+  Platform,
+  LayoutChangeEvent,
+  StyleSheet,
+} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import ArticleCard from 'components/ui/ArticleCard';
-import { AXIOS } from 'api/AXIOS';
+import { WikiApiResponse, WikiArticle } from 'types';
+import axios from 'axios';
 
-const Main = () => {
-  const [articles, setArticles] = useState<any>([]);
-  const [loadingMore, setLoadingMore] = useState<boolean>(false);
-  const [cardHeight, setCardHeight] = useState(0); // Holds the exact layout height
-  // Function to fetch a batch of random articles
-  const fetchRandomArticles = async (count = 5) => {
-    if (loadingMore) return;
-    setLoadingMore(true);
+// 1. Updated Fetch Function with recursive/looping filter logic
+const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<WikiArticle[]> => {
+  let accumulatedArticles: WikiArticle[] = [];
+  let attempts = 0;
+  const maxAttempts = 5; // Guard rail to prevent infinite loops if Wikipedia API drops out
 
-    try {
-      const newArticles: any = [];
+  try {
+    while (accumulatedArticles.length < limit && attempts < maxAttempts) {
+      attempts++;
+      
+      // Calculate how many more we need to hit our exact limit
+      const neededCount = limit - accumulatedArticles.length;
 
-      // Wikipedia's random API gives 1 article per request, so we call it a few times in parallel
-      const requests = Array.from({ length: count }, () => AXIOS.get('page/random/summary'));
-      const responses = await Promise.all(requests);
-
-      responses.forEach((res) => {
-        if (res.data && res.data.title) {
-          newArticles.push(res.data);
+      const response = await axios.get<WikiApiResponse>('https://en.wikipedia.org/w/api.php', {
+        params: {
+          action: 'query',
+          format: 'json',
+          generator: 'random',
+          grnnamespace: 0, 
+          grnlimit: Math.max(neededCount * 2, 10), // Fetch slightly more than needed to optimize hit-rate
+          prop: 'pageimages|extracts',
+          piprop: 'thumbnail',
+          pithumbsize: 400, 
+          exintro: 1,      
+          explaintext: 1,  
+          exchars: 200,    
+          origin: '*',
+        },
+        headers: {
+          'User-Agent': 'RollKi/1.0 (https://github.com/MohammedMahi1/RollKi-RN.git; mohammed.mahi012@gmail.com) Axios/React-Native'
         }
       });
 
-      setArticles((prev) => [...prev, ...newArticles]);
-    } catch (error) {
-      console.error('Error fetching Wikipedia data:', error);
-    } finally {
-      setLoadingMore(false);
+      const pages = response.data.query?.pages;
+      if (!pages) continue;
+
+      // Filter out any articles that lack a thumbnail property or source URL
+      const filteredBatch = Object.values(pages).filter(
+        (article) => article.thumbnail && article.thumbnail.source
+      );
+
+      accumulatedArticles = [...accumulatedArticles, ...filteredBatch];
     }
-  };
-  const onRefresh = () => {
-    setArticles([]);
-    fetchRandomArticles(5);
+
+    // Return exactly the amount requested (or slightly less if max attempts were hit)
+    return accumulatedArticles.slice(0, limit);
+  } catch (error) {
+    console.error('Error fetching Wikipedia articles:', error);
+    return [];
   }
-  // Load initial articles when app opens
+};
+
+const Main = () => {
+  const [articles, setArticles] = useState<WikiArticle[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [h, setH] = useState<number>(0);
+
+  const renderFooter = () => {
+    if (!isLoading) return null;
+    return (
+      <View style={styles.footerLoader}>
+        {/* Changed color to white since your background is solid black (#000000) */}
+        <ActivityIndicator size="small" color="#ffffff" />
+      </View>
+    );
+  };
+
+  // Core function to load more articles
+  const loadArticles = useCallback(
+    async (isInitial = false) => {
+      if (isLoading) return;
+      setIsLoading(true);
+
+      // Using our new thumbnail-enforced fetcher
+      const newArticles = await fetchRandomArticlesWithThumbnails(10);
+
+      setArticles((prev) => (isInitial ? newArticles : [...prev, ...newArticles]));
+      setIsLoading(false);
+    },
+    [isLoading]
+  );
+
+  // Pull-to-refresh implementation
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadArticles(true);
+    setIsRefreshing(false);
+  };
+
   useEffect(() => {
-    fetchRandomArticles(5);
+    loadArticles(true);
   }, []);
-  
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout;
+    setH(height);
+  };
+
   return (
-<SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
-      <View 
-        style={{ flex: 1 }} 
-        onLayout={(event) => {
-          // This captures the literal remaining pixel space available for your cards
-          const { height } = event.nativeEvent.layout;
-          setCardHeight(height);
-        }}
-      >
-        {cardHeight > 0 && (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
+      {/* Only render FlashList if we have calculated container height 'h'. 
+        FlashList behaves unpredictably on initial layout if item size values are 0 or undefined.
+      */}
+      <View style={{ flex: 1 }} onLayout={handleLayout}>
+        {h > 0 && (
           <FlashList
-            onRefresh={onRefresh}
             data={articles}
-            keyExtractor={(item, index) => item.pageid?.toString() || index.toString()}
-            renderItem={({ item }) => (
-              <ArticleCard item={item} cardHeight={cardHeight} />
-            )}
-            pagingEnabled={true}
-            showsVerticalScrollIndicator={false}
-            onEndReached={() => fetchRandomArticles(3)}
-            onEndReachedThreshold={0.5}
-            // Use overrideItemLayout so FlashList knows exactly how big each item is without estimatedItemSize
-            overrideItemLayout={(layout) => {
-              layout.size = cardHeight;
-            }}
+            pagingEnabled
+            renderItem={({ item }) => <ArticleCard item={item} cardHeight={h} />}
+            keyExtractor={(item) => item.pageid.toString()}
+            onEndReached={() => loadArticles(false)}
+            onEndReachedThreshold={0.5} 
+            ListFooterComponent={renderFooter}
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
           />
         )}
       </View>
@@ -77,3 +136,10 @@ const Main = () => {
 };
 
 export default Main;
+
+const styles = StyleSheet.create({
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+});
