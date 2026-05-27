@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "RollKi-RN",
-    "slug": "RollKi-RN",
+    "name": "RollKi",
+    "slug": "rollki",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
@@ -9,7 +9,20 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [],
+    "plugins": [      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/splash-icon.png",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
+        }
+      ],
+      "expo-font"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -30,6 +43,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.mohammed.mahi012.RollKiRN"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7f320787-1af9-4b58-88ff-1b54720341e7"
+      }
+    },
+    "owner": "mohammed.mahi012"
   }
 }

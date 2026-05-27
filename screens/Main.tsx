@@ -6,8 +6,8 @@ import ArticleCard from 'components/ui/ArticleCard';
 import { AXIOS } from 'api/AXIOS';
 
 const Main = () => {
-  const [articles, setArticles] = useState([]);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [articles, setArticles] = useState<any>([]);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [cardHeight, setCardHeight] = useState(0); // Holds the exact layout height
   // Function to fetch a batch of random articles
   const fetchRandomArticles = async (count = 5) => {
@@ -42,9 +42,6 @@ const Main = () => {
   useEffect(() => {
     fetchRandomArticles(5);
   }, []);
-const { height: windowHeight } = useWindowDimensions();
-  const statusBarHeight = StatusBar.currentHeight || 0;
-  const androidNavOffset = Platform.OS === 'android' ? 48 : 0;
   
   return (
 <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
