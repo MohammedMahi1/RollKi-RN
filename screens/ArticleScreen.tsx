@@ -1,9 +1,9 @@
-import { View, Text, Image, ScrollView, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { AXIOS } from 'api/AXIOS';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Span from 'components/Span';
-
+import { Image } from 'expo-image';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ArticleScreen = ({ route }: any) => {
@@ -70,7 +70,7 @@ const ArticleScreen = ({ route }: any) => {
               }
             }}
             style={styles.heroImage}
-            resizeMode="cover"
+            contentFit="cover"
           />
         <View style={styles.textContainer}>
           <Span fontWeight='bold' style={styles.titleText}>{article?.title}</Span>

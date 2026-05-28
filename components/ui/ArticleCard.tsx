@@ -1,9 +1,9 @@
-import { View, Image, Pressable, useWindowDimensions } from 'react-native';
+import { View, Pressable, useWindowDimensions } from 'react-native';
 import React, { useState } from 'react';
 import Span from 'components/Span';
 import { Bookmark, Compass, Heart } from "lucide-react-native";
 import { useNavigation } from '@react-navigation/native';
-
+import { Image } from 'expo-image';
 // 1. Explicit Typing Contract
 interface WikiArticle {
   pageid: number;
@@ -87,7 +87,7 @@ const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
               }
             }}
             style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
+            contentFit="cover"
             onError={(e) => {
               console.log(`Image failed to load for: ${title}`, e.nativeEvent.error);
             }}

@@ -1,34 +1,22 @@
-import { createStaticNavigation, StaticParamList } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { BackButton } from '../components/BackButton';
-import Main from 'screens/Main';
+import React from 'react';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import ArticleScreen from 'screens/ArticleScreen';
+import { Tabs } from './Tab';
 
-const Stack = createStackNavigator({
-  screens: {
-    Main: {
-      screen: Main,
-    },
-    ArticleScreen: {
-      screen: ArticleScreen,
-      options:{
-        animation:"slide_from_right"
-      }
-    },
-  },
-  screenOptions:{
-    headerShown: false,
-  }
-});
+const Stack = createStackNavigator();
 
-type RootNavigatorParamList = StaticParamList<typeof Stack>;
-
-declare global {
-  namespace ReactNavigation {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    interface RootParamList extends RootNavigatorParamList {}
-  }
+export function Navigation() {
+  return (
+    <Stack.Navigator 
+      screenOptions={{
+        headerShown: false,
+        // Enforces the smooth native right-to-left slide transition across iOS and Android
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        gestureEnabled: true, 
+      }}
+    >
+      <Stack.Screen name="Tabs" component={Tabs} />
+      <Stack.Screen name="ArticleScreen" component={ArticleScreen} />
+    </Stack.Navigator>
+  );
 }
-
-const Navigation = createStaticNavigation(Stack);
-export default Navigation;
