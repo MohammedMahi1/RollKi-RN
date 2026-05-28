@@ -3,14 +3,18 @@ import {
   ActivityIndicator,
   LayoutChangeEvent,
   StyleSheet,
+  Animated, // Imported Animated
 } from 'react-native';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { FlashList, FlashListRef, ListRenderItem } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import ArticleCard from 'components/ui/ArticleCard';
 import { WikiApiResponse, WikiArticle } from 'types';
 import axios from 'axios';
+
+// Create a high-performance animatable version of Shopify's FlashList
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
 const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<WikiArticle[]> => {
   let accumulatedArticles: WikiArticle[] = [];
@@ -60,13 +64,15 @@ const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<Wi
 };
 
 const Main = () => {
-  const navigation = useNavigation(); // Hook into screen navigation context
+  const navigation = useNavigation();
   const [articles, setArticles] = useState<WikiArticle[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [h, setH] = useState<number>(0);
 
-  const listRef = useRef<FlashListRef<WikiArticle>>(null);
+  // Animated tracking value for the content scroll offset
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const listRef = useRef<any>(null);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabDoubleClick' as any, () => {
@@ -122,12 +128,24 @@ const Main = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
       <View style={{ flex: 1 }} onLayout={handleLayout}>
         {h > 0 && (
-          <FlashList
+          <AnimatedFlashList
             ref={listRef}
             data={articles}
             pagingEnabled
-            renderItem={({ item }) => <ArticleCard item={item} cardHeight={h} />}
-            keyExtractor={(item) => item.pageid.toString()}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )}
+            scrollEventThrottle={16} 
+            renderItem={({ item, index }) => (
+              <ArticleCard 
+                item={item as WikiArticle} 
+                cardHeight={h} 
+                index={index} 
+                scrollY={scrollY} 
+              />
+            )}
+            keyExtractor={(item: any) => item.pageid.toString()}
             onEndReached={() => loadArticles(false)}
             onEndReachedThreshold={0.5} 
             ListFooterComponent={renderFooter}

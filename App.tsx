@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 
 import { Tabs } from 'navigation/Tab';
 import {Navigation} from 'navigation/index'
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 SplashScreen.preventAutoHideAsync();
 export default function App() {
 
@@ -17,12 +18,11 @@ export default function App() {
     'CustomFont-Bold': require('./font/CourierPrime-Bold.ttf'),
   });
 
-  const colorScheme = useColorScheme();
-  const theme = useMemo(() => (colorScheme === 'dark' ? DarkTheme : DefaultTheme), [colorScheme]);
-
   return (
-    <NavigationContainer theme={theme}>
+    <SafeAreaProvider>
+    <NavigationContainer theme={DarkTheme} >
       <Navigation/>
     </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

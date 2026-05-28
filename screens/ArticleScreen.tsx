@@ -1,13 +1,16 @@
-import { View, Text, ScrollView, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, Dimensions, ActivityIndicator, Pressable } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { AXIOS } from 'api/AXIOS';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Span from 'components/Span';
 import { Image } from 'expo-image';
+import { ArrowLeft } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ArticleScreen = ({ route }: any) => {
-  const { title } = route.params;
+  // Grab both title and our passed preview thumbnail image directly
+  const { title, fallbackImage } = route.params;
   const [article, setArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,28 +22,30 @@ const ArticleScreen = ({ route }: any) => {
           action: 'query',
           prop: 'extracts|pageimages',
           exlimit: '1',
-          piprop: 'original', 
+          piprop: 'original',
           explaintext: true,
           titles: title,
           format: 'json',
-          origin: '*'
-        }
+          origin: '*',
+        },
       });
 
       const pages = res.data.query.pages;
       const pageId = Object.keys(pages)[0];
       const pageData = pages[pageId];
-      console.log("===");
-      console.log(pageData.original.source);
-      console.log("===");
-      
+
+      // CRITICAL FIX: Add optional chaining fallback protection
+      // setup to fall back on the original card image if 'original' profile is missing
+      const highResImage = pageData?.original?.source || fallbackImage;
+
       setArticle({
         title: pageData.title,
         body: pageData.extract,
-        image: pageData.original.source
+        image: highResImage,
+        pageId: pageData.pageid,
       });
     } catch (error) {
-      console.error("Error fetching full Wikipedia article data: ", error);
+      console.error('Error fetching full Wikipedia article data: ', error);
     } finally {
       setLoading(false);
     }
@@ -49,37 +54,52 @@ const ArticleScreen = ({ route }: any) => {
   useEffect(() => {
     fetchData();
   }, [title]);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </SafeAreaView>
-    );
-  }
-  const rawImageUri = article.image;
-  const sanitizedImageUri = rawImageUri ? decodeURIComponent(rawImageUri) : null;
+  const nav = useNavigation()
   return (
     <SafeAreaView style={styles.container}>
+      
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
-          <Image
-            source={{ 
-              uri: sanitizedImageUri as string,
-              headers: {
-                'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)',
-              }
-            }}
-            style={styles.heroImage}
-            contentFit="cover"
-          />
+
+        <Image
+          source={{
+            // Instantly displays the fallbackImage before the API request completes!
+            uri: article?.image || fallbackImage,
+            headers: {
+              'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)',
+            },
+          }}
+          style={styles.heroImage}
+          contentFit="cover"
+          transition={200} // Smooth fading cross-dissolve when high-res variant loads over placeholder
+        />
+        <Pressable
+          onPress={() => nav.goBack()}
+          style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            padding: 10,
+            borderRadius: 50,
+          }}>
+          <ArrowLeft color="#fff" size={24} />
+        </Pressable>
         <View style={styles.textContainer}>
-          <Span fontWeight='bold' style={styles.titleText}>{article?.title}</Span>
+          <Span fontWeight="bold" style={styles.titleText}>
+            {article?.title || title}
+          </Span>
           <Span style={styles.descriptionText}>Wikipedia Full Article</Span>
-          
-          {article?.body ? (
+
+          {loading ? (
+            <View style={styles.bodyLoader}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            </View>
+          ) : article?.body ? (
             <Span style={styles.extractText}>{article.body}</Span>
           ) : (
-            <Span style={styles.extractText}>This article has no viewable text sections available.</Span>
+            <Span style={styles.extractText}>
+              This article has no viewable text sections available.
+            </Span>
           )}
         </View>
       </ScrollView>
@@ -92,12 +112,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
-  centeredContainer: {
-    flex: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   scrollContent: {
     paddingBottom: 50,
   },
@@ -106,17 +120,12 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT * 0.55,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
-    backgroundColor:"#1e1e1e"
-  },
-  placeholderImage: {
-    backgroundColor: '#1A1A1A',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#1e1e1e',
   },
   textContainer: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    fontFamily:"CourierPrime-Regular"
+    fontFamily: 'CourierPrime-Regular',
   },
   titleText: {
     color: '#FFFFFF',
@@ -135,11 +144,10 @@ const styles = StyleSheet.create({
     color: '#E0E0E0',
     fontSize: 16,
     lineHeight: 26,
-    },
-  loadingText: {
-    color: '#A0A0A0',
-    marginTop: 12,
-    fontSize: 14,
+  },
+  bodyLoader: {
+    marginTop: 40,
+    alignItems: 'center',
   },
 });
 

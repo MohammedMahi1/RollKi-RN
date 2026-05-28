@@ -7,13 +7,18 @@ const Stack = createStackNavigator();
 
 export function Navigation() {
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        // Enforces the smooth native right-to-left slide transition across iOS and Android
+        // Smooth native right-to-left slide transition
         cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true, 
-        gestureResponseDistance:200
+        
+        // FIX 2: Forces the background layer during pop transitions to stay completely black
+        cardStyle: { backgroundColor: '#000000' },
+        
+        // FIX 1: REMOVED gestureResponseDistance: 200
+        // This stops React Navigation from blocking vertical scrolling on your article lists.
       }}
     >
       <Stack.Screen name="Tabs" component={Tabs} />

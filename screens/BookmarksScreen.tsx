@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 const BookmarksScreen = () => {
   return (
-    <SafeAreaView style={{flex:1}}>
-      
+    <SafeAreaView style={{flex:1,backgroundColor:"#000000"}}>
+
     </SafeAreaView>
   )
 }
