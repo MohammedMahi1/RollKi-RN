@@ -81,14 +81,14 @@ const ArticleCard = ({ item, cardHeight }: ArticleCardProps) => {
         }}>
           <Image
             source={{ 
-              uri: sanitizedImageUri,
+              uri: sanitizedImageUri as string,
               headers: {
                 'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)',
               }
             }}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
-            onError={(e) => {
+            onError={(e:any) => {
               console.log(`Image failed to load for: ${title}`, e.nativeEvent.error);
             }}
           />

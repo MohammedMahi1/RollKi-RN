@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
-import { useNavigation } from '@react-navigation/native'; // Added navigation hook
+import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { useNavigation } from '@react-navigation/native';
 import ArticleCard from 'components/ui/ArticleCard';
 import { WikiApiResponse, WikiArticle } from 'types';
 import axios from 'axios';
@@ -66,13 +66,11 @@ const Main = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [h, setH] = useState<number>(0);
 
-  const listRef = useRef<FlashList<WikiArticle>>(null);
+  const listRef = useRef<FlashListRef<WikiArticle>>(null);
 
-  // Set up listener for our custom double click tab event
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabDoubleClick' as any, () => {
       if (listRef.current && articles.length > 0) {
-        // Smoothly scroll down or up directly to the first item (index 0)
         listRef.current.scrollToIndex({
           index: 0,
           animated: true,

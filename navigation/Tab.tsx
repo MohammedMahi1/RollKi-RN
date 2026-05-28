@@ -13,7 +13,6 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
   const { buildHref } = useLinkBuilder();
   const { width: screenWidth } = useWindowDimensions();
   
-  // Track the timestamp of the last tap to detect a true double-click
   const [lastTap, setLastTap] = useState<{ [key: string]: number }>({});
 
   return (
@@ -24,28 +23,23 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
 
         const onPress = () => {
           const now = Date.now();
-          const DOUBLE_PRESS_DELAY = 300; // Time in ms to qualify as a double click
+          const DOUBLE_PRESS_DELAY = 300;
 
           if (isFocused) {
-            // If already focused, check if this click is part of a double-click
             const prevTapTime = lastTap[route.name] || 0;
             
             if (now - prevTapTime < DOUBLE_PRESS_DELAY) {
-              // Double click detected! Emit a custom event the screen can listen to
               navigation.emit({
                 type: 'tabDoubleClick',
                 target: route.key,
               });
-              // Reset tap log for this route
               setLastTap({ ...lastTap, [route.name]: 0 });
             } else {
-              // First click recorded
               setLastTap({ ...lastTap, [route.name]: now });
             }
-            return; // Exit out early so a single click on an active tab does nothing
+            return; 
           }
 
-          // If NOT focused, treat as a normal single-click navigation switch
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,

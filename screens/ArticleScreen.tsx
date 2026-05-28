@@ -64,7 +64,7 @@ const ArticleScreen = ({ route }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
           <Image
             source={{ 
-              uri: sanitizedImageUri,
+              uri: sanitizedImageUri as string,
               headers: {
                 'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)',
               }
