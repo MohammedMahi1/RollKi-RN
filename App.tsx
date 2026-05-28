@@ -7,22 +7,24 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
 import { Tabs } from 'navigation/Tab';
-import {Navigation} from 'navigation/index'
+import { Navigation } from 'navigation/index';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Provider } from 'react-redux';
+import { store } from 'store/store';
 SplashScreen.preventAutoHideAsync();
 export default function App() {
-
-
   useFonts({
-    'CustomFont-Regular': require("./font/CourierPrime-Regular.ttf"),
+    'CustomFont-Regular': require('./font/CourierPrime-Regular.ttf'),
     'CustomFont-Bold': require('./font/CourierPrime-Bold.ttf'),
   });
 
   return (
-    <SafeAreaProvider>
-    <NavigationContainer theme={DarkTheme} >
-      <Navigation/>
-    </NavigationContainer>
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <NavigationContainer theme={DarkTheme}>
+          <Navigation />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </Provider>
   );
 }
