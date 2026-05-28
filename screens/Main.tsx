@@ -1,28 +1,25 @@
 import {
   View,
   ActivityIndicator,
-  Platform,
   LayoutChangeEvent,
   StyleSheet,
 } from 'react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
+import { useNavigation } from '@react-navigation/native'; // Added navigation hook
 import ArticleCard from 'components/ui/ArticleCard';
 import { WikiApiResponse, WikiArticle } from 'types';
 import axios from 'axios';
 
-// 1. Updated Fetch Function with recursive/looping filter logic
 const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<WikiArticle[]> => {
   let accumulatedArticles: WikiArticle[] = [];
   let attempts = 0;
-  const maxAttempts = 5; // Guard rail to prevent infinite loops if Wikipedia API drops out
+  const maxAttempts = 5;
 
   try {
     while (accumulatedArticles.length < limit && attempts < maxAttempts) {
       attempts++;
-      
-      // Calculate how many more we need to hit our exact limit
       const neededCount = limit - accumulatedArticles.length;
 
       const response = await axios.get<WikiApiResponse>('https://en.wikipedia.org/w/api.php', {
@@ -31,7 +28,7 @@ const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<Wi
           format: 'json',
           generator: 'random',
           grnnamespace: 0, 
-          grnlimit: Math.max(neededCount * 2, 10), // Fetch slightly more than needed to optimize hit-rate
+          grnlimit: Math.max(neededCount * 2, 10),
           prop: 'pageimages|extracts',
           piprop: 'thumbnail',
           pithumbsize: 400, 
@@ -48,7 +45,6 @@ const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<Wi
       const pages = response.data.query?.pages;
       if (!pages) continue;
 
-      // Filter out any articles that lack a thumbnail property or source URL
       const filteredBatch = Object.values(pages).filter(
         (article) => article.thumbnail && article.thumbnail.source
       );
@@ -56,7 +52,6 @@ const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<Wi
       accumulatedArticles = [...accumulatedArticles, ...filteredBatch];
     }
 
-    // Return exactly the amount requested (or slightly less if max attempts were hit)
     return accumulatedArticles.slice(0, limit);
   } catch (error) {
     console.error('Error fetching Wikipedia articles:', error);
@@ -65,28 +60,43 @@ const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<Wi
 };
 
 const Main = () => {
+  const navigation = useNavigation(); // Hook into screen navigation context
   const [articles, setArticles] = useState<WikiArticle[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [h, setH] = useState<number>(0);
 
+  const listRef = useRef<FlashList<WikiArticle>>(null);
+
+  // Set up listener for our custom double click tab event
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabDoubleClick' as any, () => {
+      if (listRef.current && articles.length > 0) {
+        // Smoothly scroll down or up directly to the first item (index 0)
+        listRef.current.scrollToIndex({
+          index: 0,
+          animated: true,
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, articles]);
+
   const renderFooter = () => {
     if (!isLoading) return null;
     return (
       <View style={styles.footerLoader}>
-        {/* Changed color to white since your background is solid black (#000000) */}
         <ActivityIndicator size="small" color="#ffffff" />
       </View>
     );
   };
 
-  // Core function to load more articles
   const loadArticles = useCallback(
     async (isInitial = false) => {
       if (isLoading) return;
       setIsLoading(true);
 
-      // Using our new thumbnail-enforced fetcher
       const newArticles = await fetchRandomArticlesWithThumbnails(10);
 
       setArticles((prev) => (isInitial ? newArticles : [...prev, ...newArticles]));
@@ -95,7 +105,6 @@ const Main = () => {
     [isLoading]
   );
 
-  // Pull-to-refresh implementation
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadArticles(true);
@@ -113,12 +122,10 @@ const Main = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
-      {/* Only render FlashList if we have calculated container height 'h'. 
-        FlashList behaves unpredictably on initial layout if item size values are 0 or undefined.
-      */}
       <View style={{ flex: 1 }} onLayout={handleLayout}>
         {h > 0 && (
           <FlashList
+            ref={listRef}
             data={articles}
             pagingEnabled
             renderItem={({ item }) => <ArticleCard item={item} cardHeight={h} />}

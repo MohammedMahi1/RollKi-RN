@@ -13,6 +13,7 @@ export function Navigation() {
         // Enforces the smooth native right-to-left slide transition across iOS and Android
         cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true, 
+        gestureResponseDistance:200
       }}
     >
       <Stack.Screen name="Tabs" component={Tabs} />
