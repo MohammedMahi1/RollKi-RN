@@ -3,17 +3,27 @@ import React from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Span from 'components/Span';
-
+import { useNavigation } from '@react-navigation/native';
 export type BookedArticleType = {
   title: string;
   description: string;
   source: string;
-  onLongPress?:()=>void
+  onLongPress?:()=>void;
+  onPress?:()=>void
 };
 
 const BookedArticle = ({ title, description, source,onLongPress }: BookedArticleType) => {
+  const nav = useNavigation<any>()
   return (
-    <Pressable style={styles.cardContainer} onLongPress={onLongPress}>
+    <Pressable 
+    style={styles.cardContainer} 
+    onLongPress={onLongPress} 
+    onPress={()=>{
+    nav.navigate("ArticleScreen", {
+      title: title,
+      fallbackImage: source
+    });
+    }}>
       {/* Article Background Image */}
       <Image
         source={{ uri: source }}

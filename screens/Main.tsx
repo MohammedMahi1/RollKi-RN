@@ -3,94 +3,81 @@ import {
   ActivityIndicator,
   LayoutChangeEvent,
   StyleSheet,
-  Animated, // Imported Animated
+  Animated,
 } from 'react-native';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList, FlashListRef, ListRenderItem } from '@shopify/flash-list';
+import { FlashList } from '@shopify/flash-list';
 import { useNavigation } from '@react-navigation/native';
 import ArticleCard from 'components/ui/ArticleCard';
-import { WikiApiResponse, WikiArticle } from 'types';
-import axios from 'axios';
+import { WikiArticle } from 'types';
 import { useAppDispatch, useAppSelector } from 'hooks/store';
 import { articleAsyncThunk } from 'store/asyncThunk/articleAsyncThunk';
 
-// Create a high-performance animatable version of Shopify's FlashList
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
-
-const fetchRandomArticlesWithThumbnails = async (limit: number = 10): Promise<WikiArticle[]> => {
-  let accumulatedArticles: WikiArticle[] = [];
-  let attempts = 0;
-  const maxAttempts = 5;
-
-  try {
-    while (accumulatedArticles.length < limit && attempts < maxAttempts) {
-      attempts++;
-      const neededCount = limit - accumulatedArticles.length;
-
-      const response = await axios.get<WikiApiResponse>('https://en.wikipedia.org/w/api.php', {
-        params: {
-          action: 'query',
-          format: 'json',
-          generator: 'random',
-          grnnamespace: 0, 
-          grnlimit: Math.max(neededCount * 2, 10),
-          prop: 'pageimages|extracts',
-          piprop: 'thumbnail',
-          pithumbsize: 400, 
-          exintro: 1,      
-          explaintext: 1,  
-          exchars: 200,    
-          origin: '*',
-        },
-        headers: {
-          'User-Agent': 'RollKi/1.0 (https://github.com/MohammedMahi1/RollKi-RN.git; mohammed.mahi012@gmail.com) Axios/React-Native'
-        }
-      });
-
-      const pages = response.data.query?.pages;
-      if (!pages) continue;
-
-      const filteredBatch = Object.values(pages).filter(
-        (article) => article.thumbnail && article.thumbnail.source
-      );
-
-      accumulatedArticles = [...accumulatedArticles, ...filteredBatch];
-    }
-
-    return accumulatedArticles.slice(0, limit);
-  } catch (error) {
-    console.error('Error fetching Wikipedia articles:', error);
-    return [];
-  }
-};
 
 const Main = () => {
   const navigation = useNavigation();
-  const [articles, setArticles] = useState<WikiArticle[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const dispatch = useAppDispatch();
+  
+  const { data, loading: isReduxLoading } = useAppSelector((s) => s.article);
+  
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [h, setH] = useState<number>(0);
 
-  // Animated tracking value for the content scroll offset
   const scrollY = useRef(new Animated.Value(0)).current;
   const listRef = useRef<any>(null);
 
+  // Define API params inside a reusable block to keep things DRY
+  const getApiParams = (limit: number) => ({
+    action: 'query',
+    format: 'json',
+    generator: 'random',
+    grnnamespace: 0,
+    grnlimit: limit,
+    prop: 'pageimages|extracts',
+    piprop: 'thumbnail',
+    pithumbsize: 400,
+    exintro: 1,
+    explaintext: 1,
+    exchars: 200,
+    origin: '*',
+  });
+
+  // Track double clicks to scroll back up smoothly
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabDoubleClick' as any, () => {
-      if (listRef.current && articles.length > 0) {
+      if (listRef.current && data && data.length > 0) {
         listRef.current.scrollToIndex({
           index: 0,
           animated: true,
         });
       }
     });
-
     return unsubscribe;
-  }, [navigation, articles]);
+  }, [navigation, data]);
+
+  useEffect(() => {
+    dispatch(articleAsyncThunk(getApiParams(10)));
+  }, [dispatch]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await dispatch(articleAsyncThunk(getApiParams(10)));
+    setIsRefreshing(false);
+  };
+
+  // Load more pages when user scrolls to bottom
+  const loadMoreArticles = useCallback(() => {
+    // Prevent dual trigger clashes if Redux or refresh pipelines are active
+    if (isReduxLoading || isRefreshing) return;
+    
+    // Pass a parameter to your thunk or handle pagination concatenation in extraReducers
+    dispatch(articleAsyncThunk(getApiParams(10)));
+  }, [isReduxLoading, isRefreshing, dispatch]);
 
   const renderFooter = () => {
-    if (!isLoading) return null;
+    if (!isReduxLoading) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color="#ffffff" />
@@ -98,75 +85,35 @@ const Main = () => {
     );
   };
 
-  const loadArticles = useCallback(
-    async (isInitial = false) => {
-      if (isLoading) return;
-      setIsLoading(true);
-
-      const newArticles = await fetchRandomArticlesWithThumbnails(10);
-
-      setArticles((prev) => (isInitial ? newArticles : [...prev, ...newArticles]));
-      setIsLoading(false);
-    },
-    [isLoading]
-  );
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadArticles(true);
-    setIsRefreshing(false);
-  };
-  const dispatch = useAppDispatch()
-  const {data} = useAppSelector((s)=>s.article)
-  useEffect(() => {
-    dispatch(articleAsyncThunk(
-      {
-          action: 'query',
-          format: 'json',
-          generator: 'random',
-          grnnamespace: 0, 
-          grnlimit: Math.max(20, 10),
-          prop: 'pageimages|extracts',
-          piprop: 'thumbnail',
-          pithumbsize: 400, 
-          exintro: 1,      
-          explaintext: 1,  
-          exchars: 200,    
-          origin: '*',
-        }
-    ))
-    loadArticles(true);
-  }, [dispatch]);
-
   const handleLayout = (event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
     setH(height);
   };
-  
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
       <View style={{ flex: 1 }} onLayout={handleLayout}>
         {h > 0 && (
           <AnimatedFlashList
             ref={listRef}
-            data={data}
+            data={data || []} // Wire direct tracking to the actual rendered source
             pagingEnabled
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],
               { useNativeDriver: true }
             )}
-            scrollEventThrottle={16} 
+            scrollEventThrottle={16}
             renderItem={({ item, index }) => (
-              <ArticleCard 
-                item={item as WikiArticle} 
-                cardHeight={h} 
-                index={index} 
-                scrollY={scrollY} 
+              <ArticleCard
+                item={item as WikiArticle}
+                cardHeight={h}
+                index={index}
+                scrollY={scrollY}
               />
             )}
-            keyExtractor={(item: any) => item.pageid.toString()}
-            onEndReached={() => loadArticles(false)}
-            onEndReachedThreshold={0.5} 
+            keyExtractor={(item: any, idx) => item.pageid?.toString() || idx.toString()}
+            onEndReached={loadMoreArticles}
+            onEndReachedThreshold={0.5}
             ListFooterComponent={renderFooter}
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
