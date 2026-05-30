@@ -24,22 +24,19 @@ const BookedArticle = ({ title, description, source,onLongPress }: BookedArticle
       fallbackImage: source
     });
     }}>
-      {/* Article Background Image */}
       <Image
         source={{ uri: source }}
         style={styles.imageBackground}
         contentFit="cover"
         transition={200}
       />
-
-      {/* Dark Gradient Overlay: Transparent on top, solid black on bottom */}
       <LinearGradient
         colors={['transparent', 'rgba(0, 0, 0, 0.4)', 'rgb(0, 0, 0)']}
         locations={[0,0.4, 0.86]}
         style={styles.gradientOverlay}
       />
 
-      {/* Text Content Window */}
+      
       <View style={styles.textContainer}>
         <Span 
           fontWeight="bold" 

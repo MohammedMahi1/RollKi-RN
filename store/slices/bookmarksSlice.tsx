@@ -33,7 +33,7 @@ export const addBookmarkAsync = createAsyncThunk(
   async (article: Omit<NewBookmark, 'id'>, { rejectWithValue }) => {
     try {
       const newBookmark: Bookmark = {
-        id: Crypto.randomUUID(), // <-- Fixed: Securely generates runtime string IDs in Expo
+        id: Crypto.randomUUID(),
         title: article.title,
         description: article.description,
         source: article.source,
@@ -48,7 +48,6 @@ export const addBookmarkAsync = createAsyncThunk(
   }
 );
 
-// New Thunk: Delete a bookmark directly by its exact unique Title match
 export const removeBookmarkByTitleAsync = createAsyncThunk(
   'bookmark/removeBookmarkByTitle',
   async (title: string, { rejectWithValue }) => {

@@ -10,15 +10,9 @@ export function Navigation() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        // Smooth native right-to-left slide transition
         cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true, 
-        
-        // FIX 2: Forces the background layer during pop transitions to stay completely black
         cardStyle: { backgroundColor: '#000000' },
-        
-        // FIX 1: REMOVED gestureResponseDistance: 200
-        // This stops React Navigation from blocking vertical scrolling on your article lists.
       }}
     >
       <Stack.Screen name="Tabs" component={Tabs} />

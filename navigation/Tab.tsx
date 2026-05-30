@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useLinkBuilder } from '@react-navigation/native';
 import { PlatformPressable } from '@react-navigation/elements';
-// 1. Swap the imports to the hardware-accelerated top tab module
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Bookmark, GalleryVerticalEnd } from 'lucide-react-native';
 import Main from 'screens/Main';
 import BookmarksScreen from 'screens/BookmarksScreen';
 
-// 2. Initialize the Material Top Tab engine
 const Tab = createMaterialTopTabNavigator();
 
 export function MyTabBar({ state, descriptors, navigation }: any) {
@@ -114,12 +112,10 @@ export function Tabs() {
   return (
     <Tab.Navigator
       initialRouteName="Main"
-      // 3. Move the floating custom tab bar to the absolute bottom of the device stack
       tabBarPosition="bottom"
       screenOptions={{
-        // 4. Disable standard Android top tab text labels to display only your custom icons
-        swipeEnabled: true, // Allows smooth dragging with fingers anywhere on screen
-        lazy: true, // Only loads pages when they enter the viewpoint frame
+        swipeEnabled: true,
+        lazy: true,
       }}
       tabBar={(props) => <MyTabBar {...props} />}>
       <Tab.Screen name="Main" component={Main} />
@@ -142,7 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.05)',
-    zIndex: 99, // Guarantees the bar floats over flashlist views seamlessly
+    zIndex: 99,
   },
   tabButton: {
     flex: 1,

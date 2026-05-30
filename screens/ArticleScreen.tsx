@@ -62,7 +62,6 @@ const ArticleScreen = ({ route }: any) => {
 
         <Image
           source={{
-            // Instantly displays the fallbackImage before the API request completes!
             uri: article?.image || fallbackImage,
             headers: {
               'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)',
@@ -70,7 +69,7 @@ const ArticleScreen = ({ route }: any) => {
           }}
           style={styles.heroImage}
           contentFit="cover"
-          transition={200} // Smooth fading cross-dissolve when high-res variant loads over placeholder
+          transition={200}
         />
         <Pressable
           onPress={() => nav.goBack()}

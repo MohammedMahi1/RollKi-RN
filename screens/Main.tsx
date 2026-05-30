@@ -28,7 +28,6 @@ const Main = () => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const listRef = useRef<any>(null);
 
-  // Define API params inside a reusable block to keep things DRY
   const getApiParams = (limit: number) => ({
     action: 'query',
     format: 'json',
@@ -44,7 +43,6 @@ const Main = () => {
     origin: '*',
   });
 
-  // Track double clicks to scroll back up smoothly
   useEffect(() => {
     const unsubscribe = navigation.addListener('tabDoubleClick' as any, () => {
       if (listRef.current && data && data.length > 0) {
@@ -66,13 +64,8 @@ const Main = () => {
     await dispatch(articleAsyncThunk(getApiParams(10)));
     setIsRefreshing(false);
   };
-
-  // Load more pages when user scrolls to bottom
   const loadMoreArticles = useCallback(() => {
-    // Prevent dual trigger clashes if Redux or refresh pipelines are active
     if (isReduxLoading || isRefreshing) return;
-    
-    // Pass a parameter to your thunk or handle pagination concatenation in extraReducers
     dispatch(articleAsyncThunk(getApiParams(10)));
   }, [isReduxLoading, isRefreshing, dispatch]);
 
@@ -96,7 +89,7 @@ const Main = () => {
         {h > 0 && (
           <AnimatedFlashList
             ref={listRef}
-            data={data || []} // Wire direct tracking to the actual rendered source
+            data={data || []} 
             pagingEnabled
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],

@@ -36,18 +36,13 @@ source:string
 const SideTip = ({ title, description, source }: SideTipProps) => {
   const dispatch = useAppDispatch();
   
-  // Look up our collection list array from our global state
   const savedItems = useAppSelector((state) => state.bookmark.items || []);
-  
-  // Check if this article card is already saved
   const isBookmarked = savedItems.some((item) => item.title === title);
 
   const handleToggleBookmark = () => {
     if (isBookmarked) {
-      // If already bookmarked, unsave it
       dispatch(removeBookmarkByTitleAsync(title));
     } {
-      // If not bookmarked, save it fresh
       dispatch(
         addBookmarkAsync({
           title: title,
@@ -68,7 +63,7 @@ const SideTip = ({ title, description, source }: SideTipProps) => {
       paddingHorizontal: 12,
       paddingVertical: 18,
       gap: 24,
-      zIndex: 10, // Ensure buttons float safely on top of image components
+      zIndex: 10,
     }}>
       <Pressable hitSlop={12}> 
         <Heart size={26} color={"#ffffff"}/>
@@ -78,7 +73,7 @@ const SideTip = ({ title, description, source }: SideTipProps) => {
         <Bookmark 
           size={26} 
           color={isBookmarked ? "#ffffff" : "#ffffff"} 
-          fill={isBookmarked ? "#ffffff" : "transparent"} // Dynamic design fill state
+          fill={isBookmarked ? "#ffffff" : "transparent"}
         />
       </Pressable>
       
@@ -120,7 +115,6 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
         opacity: opacity,
       }}
     >
-      {/* 1. MEDIA WINDOW */}
       <View
         style={{
           backgroundColor: '#161616',
@@ -154,13 +148,11 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
         source={sanitizedImageUri?? ""}
         />
       </View>
-
-{/* 2. CONTENT WINDOW */}
 <Pressable 
   onPress={() => {
     nav.navigate("ArticleScreen", {
       title: title,
-      fallbackImage: sanitizedImageUri // Pass the working image URI down
+      fallbackImage: sanitizedImageUri
     });
   }}
   style={{ 
