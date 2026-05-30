@@ -95,7 +95,7 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
 export function Tabs() {
   return (
     <Tab.Navigator
-      initialRouteName="Main"
+      initialRouteName="Bookmarks"
       screenOptions={{
         headerShown: false,
       }}

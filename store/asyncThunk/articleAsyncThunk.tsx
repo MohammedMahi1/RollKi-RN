@@ -9,8 +9,6 @@ export const articleAsyncThunk = createAsyncThunk(
             const res = await AXIOS.get("/w/api.php",{
                 params:params
             })
-            console.log(res);
-            
             return res.data as WikiApiResponse
         } catch (error) {
             return rejectWithValue(error)

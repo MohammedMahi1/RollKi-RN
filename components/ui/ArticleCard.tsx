@@ -4,6 +4,8 @@ import Span from 'components/Span';
 import { Bookmark, Compass, Heart } from "lucide-react-native";
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import { useAppDispatch } from 'hooks/store';
+import { bookmarkSet } from 'store/slices/bookmarksSlice';
 
 interface WikiArticle {
   pageid: number;
@@ -25,7 +27,17 @@ interface ArticleCardProps {
   scrollY: Animated.Value;
 }
 
-const SideTip = () => {
+
+interface SideTipProps {
+title:string;
+description:string;
+source:string
+}
+const SideTip = ({title,description,source}:SideTipProps) => {
+  const dispatch = useAppDispatch()
+  const handleBookmark = (e:SideTipProps)=>{
+    dispatch(bookmarkSet(e))
+  }
   return (
     <View style={{
       position: 'absolute',
@@ -40,7 +52,11 @@ const SideTip = () => {
       <Pressable hitSlop={12}> 
         <Heart size={26} color={"#ffffff"}/>
       </Pressable>
-      <Pressable hitSlop={12}> 
+      <Pressable hitSlop={12} onPress={()=>handleBookmark({
+        description,
+        source,
+        title
+      })}> 
         <Bookmark size={26} color={"#ffffff"}/>
       </Pressable>
       <Pressable hitSlop={12}> 
@@ -109,7 +125,11 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
               console.log(`Image failed to load for: ${title}`, e.nativeEvent.error);
             }}
           />
-        <SideTip />
+        <SideTip 
+        description={extract ?? ""}
+        title={title}
+        source={sanitizedImageUri?? ""}
+        />
       </View>
 
 {/* 2. CONTENT WINDOW */}

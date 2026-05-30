@@ -36,11 +36,14 @@ const articleSlice = createSlice({
         (state, { payload }: PayloadAction<WikiApiResponse>) => {
           state.loading = false;
           state.error = null;
-          state.pages === payload.query?.pages;
+
+          state.pages = payload.query?.pages || {};
+
           const filteredBatch = Object.values(state.pages).filter(
             (article) => article.thumbnail && article.thumbnail.source
           );
-          state.data = [...state.data,...filteredBatch];
+
+          state.data = [...state.data, ...filteredBatch];
         }
       )
       .addCase(articleAsyncThunk.rejected, (state, { payload }: PayloadAction<unknown>) => {

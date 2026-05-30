@@ -12,6 +12,8 @@ import { useNavigation } from '@react-navigation/native';
 import ArticleCard from 'components/ui/ArticleCard';
 import { WikiApiResponse, WikiArticle } from 'types';
 import axios from 'axios';
+import { useAppDispatch, useAppSelector } from 'hooks/store';
+import { articleAsyncThunk } from 'store/asyncThunk/articleAsyncThunk';
 
 // Create a high-performance animatable version of Shopify's FlashList
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
@@ -114,23 +116,40 @@ const Main = () => {
     await loadArticles(true);
     setIsRefreshing(false);
   };
-
+  const dispatch = useAppDispatch()
+  const {data} = useAppSelector((s)=>s.article)
   useEffect(() => {
+    dispatch(articleAsyncThunk(
+      {
+          action: 'query',
+          format: 'json',
+          generator: 'random',
+          grnnamespace: 0, 
+          grnlimit: Math.max(20, 10),
+          prop: 'pageimages|extracts',
+          piprop: 'thumbnail',
+          pithumbsize: 400, 
+          exintro: 1,      
+          explaintext: 1,  
+          exchars: 200,    
+          origin: '*',
+        }
+    ))
     loadArticles(true);
-  }, []);
+  }, [dispatch]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
     setH(height);
   };
-
+  
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
       <View style={{ flex: 1 }} onLayout={handleLayout}>
         {h > 0 && (
           <AnimatedFlashList
             ref={listRef}
-            data={articles}
+            data={data}
             pagingEnabled
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],
