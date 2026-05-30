@@ -35,8 +35,7 @@ import { useAppSelector } from 'hooks/store';
 
 const BookmarksScreen = () => {
 
-  const data = useAppSelector((s)=>s.bookmark) 
-  console.log(data);
+  const data = useAppSelector((s)=>s.bookmark)
   
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

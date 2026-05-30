@@ -53,8 +53,8 @@ const BookedArticle = ({ title, description, img }: BookedArticleType) => {
 const styles = StyleSheet.create({
   cardContainer: {
     flex: 1,
-    height: 220, // Clean vertical aspect ratio for a 3-column grid grid
-    margin: 3, // Safe, explicit gap spacing between items
+    height: 220,
+    margin: 2, 
     backgroundColor: '#1e1e1e',
     overflow: 'hidden',
     position: 'relative',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '65%', // Covers the lower portion of the image where text lives
+    height: '65%',
   },
   textContainer: {
     position: 'absolute',
