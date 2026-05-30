@@ -1,17 +1,18 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AXIOS } from "api/AXIOS";
-import { WikiApiResponse } from "types";
 
+// Inside your store/asyncThunk/articleAsyncThunk file:
 export const articleAsyncThunk = createAsyncThunk(
-    "articleAsyncThunk",
-    async(params:any,{rejectWithValue})=>{
-        try {
-            const res = await AXIOS.get("/w/api.php",{
-                params:params
-            })
-            return res.data as WikiApiResponse
-        } catch (error) {
-            return rejectWithValue(error)
-        }
+  'article/fetch',
+  async (params: any, { rejectWithValue }) => {
+    try {
+      const { isRefresh, ...apiParams } = params;
+      
+      const response = await AXIOS.get('/w/api.php', { params: apiParams });
+      
+      return { ...response.data, isRefresh }; 
+    } catch (err: any) {
+      return rejectWithValue(err.message);
     }
-)
+  }
+);

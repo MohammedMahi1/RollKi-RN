@@ -3,11 +3,7 @@ import { articleAsyncThunk } from 'store/asyncThunk/articleAsyncThunk';
 import { WikiApiResponse, WikiArticle } from 'types';
 
 type InitialStateType = {
-  pages:
-    | {
-        [key: string]: WikiArticle;
-      }
-    | {};
+  pages: { [key: string]: WikiArticle } | {};
   data: WikiArticle[];
   loading: boolean;
   error: null | string | unknown;
@@ -26,27 +22,30 @@ const articleSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(articleAsyncThunk.pending, (state, _) => {
+      .addCase(articleAsyncThunk.pending, (state) => {
         state.loading = true;
         state.error = null;
-        state.pages = {};
       })
       .addCase(
         articleAsyncThunk.fulfilled,
-        (state, { payload }: PayloadAction<WikiApiResponse>) => {
+        (state, action: PayloadAction<WikiApiResponse & { isRefresh?: boolean }>) => {
           state.loading = false;
           state.error = null;
 
-          state.pages = payload.query?.pages || {};
+          state.pages = action.payload.query?.pages || {};
 
           const filteredBatch = Object.values(state.pages).filter(
             (article) => article.thumbnail && article.thumbnail.source
           );
 
-          state.data = [...state.data, ...filteredBatch];
+          if (action.payload.isRefresh) {
+            state.data = filteredBatch; 
+          } else {
+            state.data = [...state.data, ...filteredBatch];
+          }
         }
       )
-      .addCase(articleAsyncThunk.rejected, (state, { payload }: PayloadAction<unknown>) => {
+      .addCase(articleAsyncThunk.rejected, (state, { payload }) => {
         state.loading = false;
         state.error = payload;
         state.pages = {};

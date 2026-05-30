@@ -1,10 +1,4 @@
-import {
-  View,
-  ActivityIndicator,
-  LayoutChangeEvent,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, ActivityIndicator, LayoutChangeEvent, StyleSheet, Animated } from 'react-native';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
@@ -19,9 +13,9 @@ const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 const Main = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
-  
+
   const { data, loading: isReduxLoading } = useAppSelector((s) => s.article);
-  
+
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [h, setH] = useState<number>(0);
 
@@ -61,14 +55,15 @@ const Main = () => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await dispatch(articleAsyncThunk(getApiParams(10)));
+    await dispatch(articleAsyncThunk({ ...getApiParams(10), isRefresh: true }));
     setIsRefreshing(false);
   };
+
   const loadMoreArticles = useCallback(() => {
     if (isReduxLoading || isRefreshing) return;
+    // Standard fetch: appends data normally without setting the clear flag
     dispatch(articleAsyncThunk(getApiParams(10)));
   }, [isReduxLoading, isRefreshing, dispatch]);
-
   const renderFooter = () => {
     if (!isReduxLoading) return null;
     return (
@@ -89,12 +84,11 @@ const Main = () => {
         {h > 0 && (
           <AnimatedFlashList
             ref={listRef}
-            data={data || []} 
+            data={data || []}
             pagingEnabled
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: true }
-            )}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+              useNativeDriver: true,
+            })}
             scrollEventThrottle={16}
             renderItem={({ item, index }) => (
               <ArticleCard
