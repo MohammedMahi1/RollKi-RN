@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BookmarksScreen() {
   const dispatch = useAppDispatch();
-  const { items, loading, error } = useAppSelector((state) => state.bookmark);
+  const { items, loading } = useAppSelector((state) => state.bookmark);
 
   useEffect(() => {
     dispatch(fetchBookmarksAsync());
@@ -22,10 +22,18 @@ export default function BookmarksScreen() {
     );
   }
 
+  const onRefreshing = () => {
+    dispatch(fetchBookmarksAsync());
+  };
+
+  // FIX: Since local state and DB are both [Oldest -> Newest], 
+  // reversing it here will ALWAYS show [Newest -> Oldest] perfectly.
+  const orderedItems = [...items].reverse();
+
   return (
     <SafeAreaView style={styles.container}>
       <FlashList
-        data={items}
+        data={orderedItems} 
         numColumns={3}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -41,6 +49,8 @@ export default function BookmarksScreen() {
             <Text style={{ color: '#888' }}>No saved bookmarks yet.</Text>
           </View>
         }
+        refreshing={loading}
+        onRefresh={onRefreshing}
       />
     </SafeAreaView>
   );

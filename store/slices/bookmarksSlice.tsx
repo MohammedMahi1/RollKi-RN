@@ -89,8 +89,8 @@ const bookmarkSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(addBookmarkAsync.fulfilled, (state, action: PayloadAction<Bookmark>) => {
-        state.items.unshift(action.payload);
+      .addCase(addBookmarkAsync.fulfilled, (state, action) => {
+        state.items = [...state.items, action.payload]; 
       })
       .addCase(removeBookmarkAsync.fulfilled, (state, action: PayloadAction<string>) => {
         state.items = state.items.filter((item) => item.id !== action.payload);
