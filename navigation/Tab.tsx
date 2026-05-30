@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useLinkBuilder } from '@react-navigation/native';
 import { PlatformPressable } from '@react-navigation/elements';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+// 1. Swap the imports to the hardware-accelerated top tab module
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Bookmark, GalleryVerticalEnd } from 'lucide-react-native';
 import Main from 'screens/Main';
 import BookmarksScreen from 'screens/BookmarksScreen';
 
-const Tab = createBottomTabNavigator();
+// 2. Initialize the Material Top Tab engine
+const Tab = createMaterialTopTabNavigator();
 
 export function MyTabBar({ state, descriptors, navigation }: any) {
   const { buildHref } = useLinkBuilder();
   const { width: screenWidth } = useWindowDimensions();
-  
   const [lastTap, setLastTap] = useState<{ [key: string]: number }>({});
 
   return (
@@ -27,7 +28,7 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
 
           if (isFocused) {
             const prevTapTime = lastTap[route.name] || 0;
-            
+
             if (now - prevTapTime < DOUBLE_PRESS_DELAY) {
               navigation.emit({
                 type: 'tabDoubleClick',
@@ -37,7 +38,7 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
             } else {
               setLastTap({ ...lastTap, [route.name]: now });
             }
-            return; 
+            return;
           }
 
           const event = navigation.emit({
@@ -61,14 +62,32 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
         const renderIcon = (focused: boolean) => {
           const iconSize = 26;
           const iconColor = focused ? '#ffffff' : '#666666';
-
+          const iconFill = focused ? '#ffffff' : 'transparent';
           switch (route.name.toLowerCase()) {
             case 'main':
-              return <GalleryVerticalEnd size={iconSize} color={iconColor} />;
+              return (
+                <GalleryVerticalEnd
+                  size={iconSize}
+                  color={iconColor}
+                  fill={iconFill}
+                />
+              );
             case 'bookmarks':
-              return <Bookmark size={iconSize} color={iconColor} />;
+              return (
+                <Bookmark
+                  size={iconSize}
+                  color={iconColor}
+                  fill={iconFill}
+                />
+              );
             default:
-              return <GalleryVerticalEnd size={iconSize} color={iconColor} />;
+              return (
+                <GalleryVerticalEnd
+                  size={iconSize}
+                  color={iconColor}
+                  fill={iconFill}
+                />
+              );
           }
         };
 
@@ -82,8 +101,7 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
             onPress={onPress}
             onLongPress={onLongPress}
             style={styles.tabButton}
-            hitSlop={10}
-          >
+            hitSlop={10}>
             {renderIcon(isFocused)}
           </PlatformPressable>
         );
@@ -96,11 +114,14 @@ export function Tabs() {
   return (
     <Tab.Navigator
       initialRouteName="Main"
+      // 3. Move the floating custom tab bar to the absolute bottom of the device stack
+      tabBarPosition="bottom"
       screenOptions={{
-        headerShown: false,
+        // 4. Disable standard Android top tab text labels to display only your custom icons
+        swipeEnabled: true, // Allows smooth dragging with fingers anywhere on screen
+        lazy: true, // Only loads pages when they enter the viewpoint frame
       }}
-      tabBar={(props) => <MyTabBar {...props} />}
-    >
+      tabBar={(props) => <MyTabBar {...props} />}>
       <Tab.Screen name="Main" component={Main} />
       <Tab.Screen name="Bookmarks" component={BookmarksScreen} />
     </Tab.Navigator>
@@ -121,6 +142,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.05)',
+    zIndex: 99, // Guarantees the bar floats over flashlist views seamlessly
   },
   tabButton: {
     flex: 1,
