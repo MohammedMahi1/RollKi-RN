@@ -9,7 +9,8 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [      [
+    "plugins": [
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",
@@ -21,7 +22,8 @@
           "imageWidth": 200
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-sqlite"
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

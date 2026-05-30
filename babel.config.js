@@ -7,6 +7,8 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
 
-    plugins,
+    plugins:[
+      ['inline-import', { extensions: ['.sql'] }] // <-- Add this line
+    ],
   };
 };

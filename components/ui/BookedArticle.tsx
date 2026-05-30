@@ -1,4 +1,4 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import React from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,15 +7,16 @@ import Span from 'components/Span';
 export type BookedArticleType = {
   title: string;
   description: string;
-  img: string;
+  source: string;
+  onLongPress?:()=>void
 };
 
-const BookedArticle = ({ title, description, img }: BookedArticleType) => {
+const BookedArticle = ({ title, description, source,onLongPress }: BookedArticleType) => {
   return (
-    <View style={styles.cardContainer}>
+    <Pressable style={styles.cardContainer} onLongPress={onLongPress}>
       {/* Article Background Image */}
       <Image
-        source={{ uri: img }}
+        source={{ uri: source }}
         style={styles.imageBackground}
         contentFit="cover"
         transition={200}
@@ -46,7 +47,7 @@ const BookedArticle = ({ title, description, img }: BookedArticleType) => {
           {description}
         </Span>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

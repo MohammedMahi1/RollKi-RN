@@ -1,70 +1,52 @@
-import { StyleSheet } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list'; 
+import { useAppDispatch, useAppSelector } from 'hooks/store';
+import { fetchBookmarksAsync, removeBookmarkAsync } from 'store/slices/bookmarksSlice';
+import BookedArticle from 'components/ui/BookedArticle';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FlashList } from '@shopify/flash-list';
-import BookedArticle, { BookedArticleType } from 'components/ui/BookedArticle';
-import { useAppSelector } from 'hooks/store';
 
-// Example Mock Data matching your layout specifications 
-// const data: BookedArticleType[] = [
-//   { title: "Article numdfvd", description: "this is description of", img: "https://picsum.photos/400/600?random=1" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=2" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=3" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=4" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=5" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=6" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=1" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=2" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=3" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=4" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=5" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=6" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=1" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=2" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=3" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=4" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=5" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=6" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=1" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=2" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=3" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=4" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=5" },
-//   { title: "Article num", description: "this is description of", img: "https://picsum.photos/400/600?random=6" },
-// ];
+export default function BookmarksScreen() {
+  const dispatch = useAppDispatch();
+  const { items, loading, error } = useAppSelector((state) => state.bookmark);
 
-const BookmarksScreen = () => {
+  useEffect(() => {
+    dispatch(fetchBookmarksAsync());
+  }, [dispatch]);
 
-  const data = useAppSelector((s)=>s.bookmark)
-  
+  if (loading && items.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <FlashList
-        data={data}
-        numColumns={3} // Native high performance multi-column calculation
+        data={items}
+        numColumns={3}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <BookedArticle 
-            description={item.description}
-            img={item.source}
             title={item.title}
+            description={item.description}
+            source={item.source}
+            onLongPress={() => dispatch(removeBookmarkAsync(item.id))}
           />
         )}
-        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.center}>
+            <Text style={{ color: '#888' }}>No saved bookmarks yet.</Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  listContent: {
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 100, // Provides extra space to scroll past the floating bottom tab bar cleanly
-  },
+  container: { flex: 1, backgroundColor: '#000000' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' }
 });
-
-export default BookmarksScreen;

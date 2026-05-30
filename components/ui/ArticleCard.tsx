@@ -4,8 +4,8 @@ import Span from 'components/Span';
 import { Bookmark, Compass, Heart } from "lucide-react-native";
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
-import { useAppDispatch } from 'hooks/store';
-import { bookmarkSet } from 'store/slices/bookmarksSlice';
+import { useAppDispatch, useAppSelector } from 'hooks/store';
+import { addBookmarkAsync, removeBookmarkByTitleAsync } from 'store/slices/bookmarksSlice';
 
 interface WikiArticle {
   pageid: number;
@@ -33,11 +33,31 @@ title:string;
 description:string;
 source:string
 }
-const SideTip = ({title,description,source}:SideTipProps) => {
-  const dispatch = useAppDispatch()
-  const handleBookmark = (e:SideTipProps)=>{
-    dispatch(bookmarkSet(e))
-  }
+const SideTip = ({ title, description, source }: SideTipProps) => {
+  const dispatch = useAppDispatch();
+  
+  // Look up our collection list array from our global state
+  const savedItems = useAppSelector((state) => state.bookmark.items || []);
+  
+  // Check if this article card is already saved
+  const isBookmarked = savedItems.some((item) => item.title === title);
+
+  const handleToggleBookmark = () => {
+    if (isBookmarked) {
+      // If already bookmarked, unsave it
+      dispatch(removeBookmarkByTitleAsync(title));
+    } {
+      // If not bookmarked, save it fresh
+      dispatch(
+        addBookmarkAsync({
+          title: title,
+          description: description || 'No preview available',
+          source: source || 'https://via.placeholder.com/150',
+        })
+      );
+    }
+  };
+
   return (
     <View style={{
       position: 'absolute',
@@ -48,17 +68,20 @@ const SideTip = ({title,description,source}:SideTipProps) => {
       paddingHorizontal: 12,
       paddingVertical: 18,
       gap: 24,
+      zIndex: 10, // Ensure buttons float safely on top of image components
     }}>
       <Pressable hitSlop={12}> 
         <Heart size={26} color={"#ffffff"}/>
       </Pressable>
-      <Pressable hitSlop={12} onPress={()=>handleBookmark({
-        description,
-        source,
-        title
-      })}> 
-        <Bookmark size={26} color={"#ffffff"}/>
+      
+      <Pressable hitSlop={12} onPress={handleToggleBookmark}> 
+        <Bookmark 
+          size={26} 
+          color={isBookmarked ? "#ffffff" : "#ffffff"} 
+          fill={isBookmarked ? "#ffffff" : "transparent"} // Dynamic design fill state
+        />
       </Pressable>
+      
       <Pressable hitSlop={12}> 
         <Compass size={26} color={"#ffffff"}/>
       </Pressable>
