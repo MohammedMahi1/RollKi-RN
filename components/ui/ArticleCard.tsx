@@ -153,7 +153,7 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
 
         {/* FIGMA PRECISE GEOMETRY OVERLAY */}
         <AnimatedReanimated.View style={[styles.centerOverlay, animatedBookmarkStyle]}>
-          <Bookmark size={170} color="#ffffff" fill="#ffffff" />
+          <Bookmark size={170} color="#c5c5c5" strokeWidth={0.1} fill="#ffffff" />
         </AnimatedReanimated.View>
 
         <SideTip isBookmarked={isBookmarked} onToggle={handleToggleBookmark} />
