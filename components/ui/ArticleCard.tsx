@@ -1,4 +1,4 @@
-import { View, Pressable, useWindowDimensions, Animated, StyleSheet } from 'react-native';
+import { View, Pressable, useWindowDimensions, Animated, StyleSheet, Share } from 'react-native';
 import React, { useState } from 'react';
 import Span from 'components/Span';
 import { Bookmark, Compass, Share2 } from "lucide-react-native"; 
@@ -7,6 +7,7 @@ import { Image } from 'expo-image';
 import { useAppDispatch, useAppSelector } from 'hooks/store';
 import { addBookmarkAsync, removeBookmarkByTitleAsync } from 'store/slices/bookmarksSlice';
 import DoublePressable from 'components/DoublePressable';
+import * as WebBrowser from 'expo-web-browser';
 
 import AnimatedReanimated, { 
   useSharedValue, 
@@ -36,16 +37,23 @@ interface ArticleCardProps {
 interface SideTipProps {
   isBookmarked: boolean;
   onToggle: () => void;
+  onShare: () => void;
+  onOpenBrowser: () => void; // Added browser callback prop signature
 }
 
-const SideTip = ({ isBookmarked, onToggle }: SideTipProps) => {
+const SideTip = ({ isBookmarked, onToggle, onShare, onOpenBrowser }: SideTipProps) => {
   return (
     <View style={styles.sideTipContainer}>
-      <Pressable hitSlop={12}><Share2 size={26} color={"#ffffff"}/></Pressable>
+      <Pressable hitSlop={12} onPress={onShare}>
+        <Share2 size={26} color={"#ffffff"}/>
+      </Pressable>
       <Pressable hitSlop={12} onPress={onToggle}> 
         <Bookmark size={26} color={"#ffffff"} fill={isBookmarked ? "#ffffff" : "transparent"}/>
       </Pressable>
-      <Pressable hitSlop={12}><Compass size={26} color={"#ffffff"}/></Pressable>
+      {/* 2. Bind the browser trigger to the Compass button */}
+      <Pressable hitSlop={12} onPress={onOpenBrowser}>
+        <Compass size={26} color={"#ffffff"}/>
+      </Pressable>
     </View>
   );
 };
@@ -59,10 +67,8 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
   const savedItems = useAppSelector((state) => state.bookmark.items || []);
   const isBookmarked = savedItems.some((bookmark) => bookmark.title === title);
 
-  // Interaction Lock State
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Reanimated Shared Values
   const animScale = useSharedValue(0);
   const animOpacity = useSharedValue(0);
 
@@ -76,6 +82,33 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
     outputRange: [1, 1, 0], 
     extrapolate: 'clamp',
   });
+
+  // Native In-App Browser Action Trigger
+  const handleOpenBrowser = async () => {
+    try {
+      const articleUrl = `https://en.m.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+      await WebBrowser.openBrowserAsync(articleUrl, {
+        toolbarColor: '#000000',
+        controlsColor: '#FFFFFF',
+        enableBarCollapsing: true, // Maximizes reading space when scrolling the webview
+        showTitle: true,
+      });
+    } catch (error) {
+      console.error('Failed to spin up native web browser surface: ', error);
+    }
+  };
+
+  const handleShareArticle = async () => {
+    try {
+      const articleUrl = `https://en.m.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+      await Share.share({
+        message: `Check out this article on RollKi: ${title}\n\n${articleUrl}`,
+        title: title,
+      });
+    } catch (error) {
+      console.error('Error opening native device share sheet:', error);
+    }
+  };
 
   const handleToggleBookmark = () => {
     if (isBookmarked) {
@@ -101,20 +134,19 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
       handleToggleBookmark();
     }
 
-    // Exact Figma Sequence Timing Frame Pipelines
     animScale.value = withSequence(
-      withTiming(1, { duration: 150 }),                       // Frame 2: Grow straight to Max Size (170)
-      withTiming(1, { duration: 100 }),                       // Frame 3: Retain Max Size hold
-      withTiming(140 / 170, { duration: 150 }),               // Frame 4: Snap smaller to 140
-      withDelay(500, withTiming(130 / 170, { duration: 200 })) // Frame 5: After 500ms delay, settle to 130 and end
+      withTiming(1, { duration: 150 }),                    
+      withTiming(1, { duration: 100 }),                    
+      withTiming(140 / 170, { duration: 150 }),              
+      withDelay(500, withTiming(130 / 170, { duration: 200 })) 
     );
 
     animOpacity.value = withSequence(
-      withTiming(1, { duration: 150 }),                       // Frame 2: Full Opacity target
-      withTiming(1, { duration: 100 }),                       // Frame 3: Stay Solid
-      withTiming(1, { duration: 150 }),                       // Frame 4: Stay Solid
+      withTiming(1, { duration: 150 }),                    
+      withTiming(1, { duration: 100 }),                    
+      withTiming(1, { duration: 150 }),                    
       withDelay(500, withTiming(0, { duration: 200 }, () => {
-        runOnJS(animationFinished)();                         // Frame 5: Fade to 0, unlock gesture
+        runOnJS(animationFinished)();                        
       }))
     );
   };
@@ -130,7 +162,7 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
     <Animated.View style={{ backgroundColor: '#000000', height: cardHeight, width: screenWidth, opacity }}>
       <DoublePressable
         onDoublePress={handleDoublePress}
-        disabled={isAnimating} // Lock the gesture handler completely during execution
+        disabled={isAnimating} 
         style={{
           backgroundColor: '#161616',
           width: '100%',
@@ -151,12 +183,17 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
             onError={(e:any) => console.log(`Image failed to load for: ${title}`, e.nativeEvent.error)}
           />
 
-        {/* FIGMA PRECISE GEOMETRY OVERLAY */}
         <AnimatedReanimated.View style={[styles.centerOverlay, animatedBookmarkStyle]}>
           <Bookmark size={170} color="#c5c5c5" strokeWidth={0.1} fill="#ffffff" />
         </AnimatedReanimated.View>
 
-        <SideTip isBookmarked={isBookmarked} onToggle={handleToggleBookmark} />
+        {/* Added Browser callback linkage */}
+        <SideTip 
+          isBookmarked={isBookmarked} 
+          onToggle={handleToggleBookmark} 
+          onShare={handleShareArticle} 
+          onOpenBrowser={handleOpenBrowser} 
+        />
       </DoublePressable>
 
       <Pressable 
