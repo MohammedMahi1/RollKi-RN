@@ -17,16 +17,6 @@ Developed by **Mohammed Mahi**.
 
 ---
 
-## 🎥 App Demonstration
-
-See **RollKi** in action. Check out the gesture fluidity, seamless stack navigation, and dark aesthetic across the core layouts:
-
-| Main Feed & Gestures | Article Screen & Webview | Bookmarks & Animations |
-| :---: | :---: | :---: |
-| [Placeholder: Link or embed code for video 1] | [Placeholder: Link or embed code for video 2] | [Placeholder: Link or embed code for video 3] |
-
----
-
 ## 🚀 Key Features
 
 * **Visual Card Deck:** Infinite scrolling layout linking curated page images with optimized excerpt summaries.
@@ -57,7 +47,7 @@ Make sure you have Node.js, Git, and the Expo Go app (or a simulator set up via 
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/YOUR_GITHUB_USERNAME/RollKi.git](https://github.com/YOUR_GITHUB_USERNAME/RollKi.git)
+git clone [https://github.com/MohammedMahi1/RollKi-RN.git](https://github.com/MohammedMahi1/RollKi-RN.git)
 cd RollKi
 ```
 ### 2. Install Dependencies
@@ -68,7 +58,11 @@ yarn install
 ```
 ### 3. Initialize Database Migrations
 RollKi automatically pushes migrations to the SQLite surface layer on execution via the schema entry points. Ensure your local configuration files are updated.
-### 4. Run the Development Server
+### 4. Build 
+```bash
+npx expo run
+```
+### 5. Run the Development Server
 ```bash
 npx expo start
 ```
