@@ -1,12 +1,9 @@
-import { DefaultTheme, DarkTheme, NavigationContainer } from '@react-navigation/native';
-import { useColorScheme } from 'react-native';
-import { useEffect, useMemo } from 'react';
+import {DarkTheme, NavigationContainer } from '@react-navigation/native';
+
 
 import 'react-native-gesture-handler';
-import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 
-import { Tabs } from 'navigation/Tab';
 import { Navigation } from 'navigation/index';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
@@ -17,7 +14,7 @@ import { ActivityIndicator, View, Text } from 'react-native';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { db } from './db';
 import migrations from './db/drizzle/migrations';
-SplashScreen.preventAutoHideAsync();
+
 export default function App() {
   useFonts({
     'CustomFont-Regular': require('./font/CourierPrime-Regular.ttf'),

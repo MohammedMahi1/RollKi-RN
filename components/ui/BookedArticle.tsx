@@ -8,10 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
-  withRepeat, 
-  withSequence, 
   withTiming,
-  runOnJS // Used to execute state update safely after animation frames complete
+  runOnJS 
 } from 'react-native-reanimated';
 
 export type BookedArticleType = {
@@ -38,50 +36,35 @@ const BookedArticle = ({
   const nav = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
 
-  const rotation = useSharedValue(0);
-  
-  // Create shared values to control both the jiggle state and the exit state
+  // Keep exit shared values for the clean delete transition
   const exitScale = useSharedValue(1);
   const exitOpacity = useSharedValue(1);
 
   useEffect(() => {
     if (isEditing) {
-      const randomOffset = (index % 3) * 35;
-      rotation.value = withSequence(
-        withTiming(-1.2, { duration: 90 + randomOffset }),
-        withRepeat(
-          withSequence(
-            withTiming(1.2, { duration: 100 }),
-            withTiming(-1.2, { duration: 100 })
-          ),
-          -1,
-          true
-        )
-      );
+      // Shaking animation completely removed here. 
+      // Only subtly scaling down the card layout to indicate edit state entry.
       exitScale.value = withTiming(0.94, { duration: 200 });
     } else {
-      rotation.value = withTiming(0, { duration: 150 });
       exitScale.value = withTiming(1, { duration: 150 });
     }
-  }, [isEditing, index]);
+  }, [isEditing]);
 
-  // COMBINED PERFORMANCE ANIMATION STYLE (Pure UI compositing thread, 0% CPU layout recalculation)
+  // Performance optimized clean style (No rotations or loops computed here)
   const animatedStyle = useAnimatedStyle(() => {
     return {
       opacity: exitOpacity.value,
       transform: [
-        { rotateZ: `${rotation.value}deg` },
         { scale: exitScale.value }
       ],
     };
   });
 
-  // FIX: Perform the shrink animation on the single item FIRST, then update state
   const handleItemDelete = () => {
     exitOpacity.value = withTiming(0, { duration: 200 });
     exitScale.value = withTiming(0, { duration: 200 }, (finished) => {
       if (finished) {
-        runOnJS(onDeletePress)(); // Removes item from Redux array after it disappears
+        runOnJS(onDeletePress)(); 
       }
     });
   };
@@ -125,7 +108,7 @@ const BookedArticle = ({
       {isEditing && (
         <Pressable 
           style={styles.deleteBadge} 
-          onPress={handleItemDelete} // Triggers the smooth local exit animation
+          onPress={handleItemDelete} 
           hitSlop={15}
         >
           <View style={styles.minusLine} />
