@@ -13,6 +13,7 @@ export function Navigation() {
         cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         gestureEnabled: true, 
         cardStyle: { backgroundColor: '#000000' },
+        detachPreviousScreen: false, 
       }}
     >
       <Stack.Screen name="Tabs" component={Tabs} />
