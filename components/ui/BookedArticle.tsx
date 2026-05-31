@@ -1,77 +1,156 @@
-import { View, StyleSheet, Pressable } from 'react-native';
-import React from 'react';
+import { View, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import React, { useEffect } from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Span from 'components/Span';
 import { useNavigation } from '@react-navigation/native';
+
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withSequence, 
+  withTiming,
+  runOnJS // Used to execute state update safely after animation frames complete
+} from 'react-native-reanimated';
+
 export type BookedArticleType = {
   title: string;
   description: string;
   source: string;
-  onLongPress?:()=>void;
-  onPress?:()=>void
+  index: number;
+  isEditing: boolean;
+  onLongPress: () => void;
+  onDeletePress: () => void;
+  onCancelEditing: () => void;
 };
 
-const BookedArticle = ({ title, description, source,onLongPress }: BookedArticleType) => {
-  const nav = useNavigation<any>()
-  return (
-    <Pressable 
-    style={styles.cardContainer} 
-    onLongPress={onLongPress} 
-    onPress={()=>{
-    nav.navigate("ArticleScreen", {
-      title: title,
-      fallbackImage: source
-    });
-    }}>
-      <Image
-        source={{ uri: source }}
-        style={styles.imageBackground}
-        contentFit="cover"
-        transition={200}
-      />
-      <LinearGradient
-        colors={['transparent', 'rgba(0, 0, 0, 0.4)', 'rgb(0, 0, 0)']}
-        locations={[0,0.4, 0.86]}
-        style={styles.gradientOverlay}
-      />
+const BookedArticle = ({ 
+  title, 
+  description, 
+  source, 
+  index,
+  isEditing, 
+  onLongPress, 
+  onDeletePress,
+  onCancelEditing
+}: BookedArticleType) => {
+  const nav = useNavigation<any>();
+  const { width: screenWidth } = useWindowDimensions();
 
-      
-      <View style={styles.textContainer}>
-        <Span 
-          fontWeight="bold" 
-          style={styles.titleText} 
-          numberOfLines={1} 
-          ellipsizeMode="tail"
+  const rotation = useSharedValue(0);
+  
+  // Create shared values to control both the jiggle state and the exit state
+  const exitScale = useSharedValue(1);
+  const exitOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (isEditing) {
+      const randomOffset = (index % 3) * 35;
+      rotation.value = withSequence(
+        withTiming(-1.2, { duration: 90 + randomOffset }),
+        withRepeat(
+          withSequence(
+            withTiming(1.2, { duration: 100 }),
+            withTiming(-1.2, { duration: 100 })
+          ),
+          -1,
+          true
+        )
+      );
+      exitScale.value = withTiming(0.94, { duration: 200 });
+    } else {
+      rotation.value = withTiming(0, { duration: 150 });
+      exitScale.value = withTiming(1, { duration: 150 });
+    }
+  }, [isEditing, index]);
+
+  // COMBINED PERFORMANCE ANIMATION STYLE (Pure UI compositing thread, 0% CPU layout recalculation)
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: exitOpacity.value,
+      transform: [
+        { rotateZ: `${rotation.value}deg` },
+        { scale: exitScale.value }
+      ],
+    };
+  });
+
+  // FIX: Perform the shrink animation on the single item FIRST, then update state
+  const handleItemDelete = () => {
+    exitOpacity.value = withTiming(0, { duration: 200 });
+    exitScale.value = withTiming(0, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(onDeletePress)(); // Removes item from Redux array after it disappears
+      }
+    });
+  };
+
+  const handleCardPress = () => {
+    if (isEditing) {
+      onCancelEditing(); 
+    } else {
+      nav.navigate("ArticleScreen", { title, fallbackImage: source });
+    }
+  };
+
+  const itemWidth = (screenWidth - 12) / 3;
+
+  return (
+    <Animated.View style={[styles.wrapper, { width: itemWidth }, animatedStyle]}>
+      <Pressable 
+        style={styles.cardContainer} 
+        onLongPress={onLongPress} 
+        onPress={handleCardPress}
+        delayLongPress={400}
+      >
+        <Image
+          source={{ uri: source }}
+          style={styles.imageBackground}
+          contentFit="cover"
+          transition={200}
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0, 0, 0, 0.4)', 'rgb(0, 0, 0)']}
+          locations={[0, 0.4, 0.86]}
+          style={styles.gradientOverlay}
+        />
+
+        <View style={styles.textContainer}>
+          <Span fontWeight="bold" style={styles.titleText} numberOfLines={1}>{title}</Span>
+          <Span style={styles.descriptionText} numberOfLines={1}>{description}</Span>
+        </View>
+      </Pressable>
+
+      {isEditing && (
+        <Pressable 
+          style={styles.deleteBadge} 
+          onPress={handleItemDelete} // Triggers the smooth local exit animation
+          hitSlop={15}
         >
-          {title}
-        </Span>
-        <Span 
-          style={styles.descriptionText} 
-          numberOfLines={1} 
-          ellipsizeMode="tail"
-        >
-          {description}
-        </Span>
-      </View>
-    </Pressable>
+          <View style={styles.minusLine} />
+        </Pressable>
+      )}
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    height: 220,
+    position: 'relative',
+    padding: 3,
+  },
   cardContainer: {
     flex: 1,
-    height: 220,
-    margin: 2, 
-    backgroundColor: '#1e1e1e',
+    backgroundColor: '#161616',
+    borderRadius: 4,
     overflow: 'hidden',
-    position: 'relative',
   },
   imageBackground: {
     width: '100%',
     height: '100%',
     position: 'absolute',
-    backgroundColor:"#ffffff"
   },
   gradientOverlay: {
     position: 'absolute',
@@ -96,6 +175,29 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 11,
     lineHeight: 14,
+  },
+  deleteBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  minusLine: {
+    width: 12,
+    height: 2.5,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 1.25,
   },
 });
 
