@@ -2,11 +2,14 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { articleAsyncThunk } from 'store/asyncThunk/articleAsyncThunk';
 import { WikiApiResponse, WikiArticle } from 'types';
 
+type LangType = "ar" | "en" | "fr";
+
 type InitialStateType = {
   pages: { [key: string]: WikiArticle } | {};
   data: WikiArticle[];
   loading: boolean;
   error: null | string | unknown;
+  lang: LangType;
 };
 
 const initialState: InitialStateType = {
@@ -14,12 +17,19 @@ const initialState: InitialStateType = {
   data: [],
   loading: false,
   error: null,
+  lang: "ar"
 };
 
 const articleSlice = createSlice({
   name: 'articleSlice',
   initialState,
-  reducers: {},
+  reducers: {
+    setLanguage: (state, action: PayloadAction<LangType>) => {
+      state.lang = action.payload;
+      state.data = [];   // Flushes out previous language data streams
+      state.pages = {};  
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(articleAsyncThunk.pending, (state) => {
@@ -31,7 +41,6 @@ const articleSlice = createSlice({
         (state, action: PayloadAction<WikiApiResponse & { isRefresh?: boolean }>) => {
           state.loading = false;
           state.error = null;
-
           state.pages = action.payload.query?.pages || {};
 
           const filteredBatch = Object.values(state.pages).filter(
@@ -53,4 +62,5 @@ const articleSlice = createSlice({
   },
 });
 
+export const { setLanguage } = articleSlice.actions;
 export default articleSlice.reducer;

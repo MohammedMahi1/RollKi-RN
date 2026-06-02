@@ -14,8 +14,8 @@ import Animated, {
 
 export type BookedArticleType = {
   title: string;
-  description: string;
-  source: string;
+  description: string | null;
+  source: string | null;
   index: number;
   isEditing: boolean;
   onLongPress: () => void;
@@ -88,7 +88,7 @@ const BookedArticle = ({
         delayLongPress={400}
       >
         <Image
-          source={{ uri: source }}
+          source={{ uri: source as string }}
           style={styles.imageBackground}
           contentFit="cover"
           transition={200}

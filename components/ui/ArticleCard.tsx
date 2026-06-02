@@ -118,6 +118,7 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
         title,
         description: extract || 'No preview available',
         source: sanitizedImageUri || 'https://via.placeholder.com/150',
+        lang:"en"
       }));
     }
   };

@@ -50,7 +50,7 @@ const Main = () => {
   }, [navigation, data]);
 
   useEffect(() => {
-    dispatch(articleAsyncThunk(getApiParams(10)));
+    dispatch(articleAsyncThunk(getApiParams(10),{signal: undefined} as any));
   }, [dispatch]);
 
   const handleRefresh = async () => {

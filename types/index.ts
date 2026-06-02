@@ -20,6 +20,7 @@ export interface WikiArticle {
   ns: number;
   title: string;
   index: number;
+  lang: string;
   thumbnail?: {
     source: string;
     width: number;

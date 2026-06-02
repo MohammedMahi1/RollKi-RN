@@ -1,18 +1,27 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AXIOS } from "api/AXIOS";
 
-// Inside your store/asyncThunk/articleAsyncThunk file:
 export const articleAsyncThunk = createAsyncThunk(
-  'article/fetch',
+  "article/fetch",
   async (params: any, { rejectWithValue }) => {
     try {
       const { isRefresh, ...apiParams } = params;
+
+      const response = await AXIOS.get("/w/api.php", {
+        params: apiParams,
+      });
       
-      const response = await AXIOS.get('/w/api.php', { params: apiParams });
-      
-      return { ...response.data, isRefresh }; 
+      return {
+        ...response.data,
+        isRefresh,
+      };
     } catch (err: any) {
-      return rejectWithValue(err.message);
+
+      return rejectWithValue(
+        err?.response?.data ||
+        err?.message ||
+        "Something went wrong"
+      );
     }
   }
 );
