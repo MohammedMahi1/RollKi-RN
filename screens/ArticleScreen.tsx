@@ -27,6 +27,7 @@ import AnimatedReanimated, {
   withDelay,
   runOnJS,
 } from 'react-native-reanimated';
+import { AXIOS } from 'api/AXIOS';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -54,11 +55,8 @@ const ArticleScreen = ({ route }: any) => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // 🚀 Connect directly to the specific server hosting this article version
-      const dynamicUrl = `https://${activeLang}.wikipedia.org/w/api.php`;
 
-      const res = await axios.get(dynamicUrl, {
+      const res = await AXIOS.get("/w/api.php", {
         params: {
           action: 'query',
           prop: 'extracts|pageimages',
@@ -69,9 +67,6 @@ const ArticleScreen = ({ route }: any) => {
           titles: title,
           format: 'json',
           origin: '*',
-        },
-        headers: { 
-          'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)' 
         }
       });
 

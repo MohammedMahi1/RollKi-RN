@@ -7,9 +7,17 @@ declare module 'axios' {
   }
 }
 
+// Safely pull variables from process.env
+const appName = process.env.EXPO_PUBLIC_USER_AGENT_APP_NAME || "RollKi/1.0";
+const repoUrl = process.env.EXPO_PUBLIC_USER_AGENT_REPO || "";
+const email = process.env.EXPO_PUBLIC_USER_AGENT_CONTACT || "";
+
+// Construct a clean User-Agent string meeting Wikipedia's API usage policy guidelines
+const userAgentHeader = `${appName} (${repoUrl}; ${email}) Axios/React-Native`;
+
 export const AXIOS = axios.create({
   headers: {
-    'User-Agent': 'RollKi/1.0 (https://github.com/MohammedMahi1/RollKi-RN.git; mohammed.mahi012@gmail.com) Axios/React-Native'
+    'User-Agent': userAgentHeader
   }
 });
 
