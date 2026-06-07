@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Modal, StyleSheet, Pressable, useWindowDimensions, TouchableOpacity } from 'react-native';
 
 interface LayoutRect {
   x: number;
@@ -55,19 +55,30 @@ const Trigger = ({ children, style }: { children: React.ReactElement; style?: an
 
 const Content = ({ children }: { children: React.ReactNode }) => {
   const context = useContext(DropMenuContext);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  
   if (!context || !context.visible || !context.triggerLayout) return null;
 
   const { triggerLayout, closeMenu } = context;
 
-  // Render position algorithm: cleanly floats standard options directly above the bottom row buttons
-  const dropdownHeight = 160; 
-  const menuTop = triggerLayout.y - dropdownHeight - 10;
-  const menuLeft = triggerLayout.x - 50;
+  const menuBottom = (screenHeight - triggerLayout.y) - 36 + 4;
+
+  const triggerCenterAbsolute = triggerLayout.x + triggerLayout.width / 2;
+  const isRightHalf = triggerCenterAbsolute > screenWidth / 2;
+
+  const positionStyles: any = { bottom: menuBottom };
+
+  if (isRightHalf) {
+    const distanceToRightEdge = screenWidth - (triggerLayout.x + triggerLayout.width);
+    positionStyles.right = Math.max(24, distanceToRightEdge);
+  } else {
+    positionStyles.left = Math.max(24, triggerLayout.x);
+  }
 
   return (
     <Modal visible={context.visible} transparent animationType="fade" onRequestClose={closeMenu}>
       <Pressable style={styles.backdrop} onPress={closeMenu}>
-        <View style={[styles.menuContent, { top: menuTop, left: Math.max(16, menuLeft) }]}>
+        <View style={[styles.menuContent, positionStyles]}>
           {children}
         </View>
       </Pressable>
@@ -105,7 +116,7 @@ const Item = ({ label, onPress, icon }: ItemProps) => {
 
 const Divider = () => <View style={styles.divider} />;
 
-// Compound Component Property Assignments
+// Compound Property Hooks
 DropMenu.Trigger = Trigger;
 DropMenu.Content = Content;
 DropMenu.Header = Header;
@@ -150,6 +161,9 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: 10,
+    width: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemText: {
     color: '#FFFFFF',
