@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useLinkBuilder } from '@react-navigation/native';
 import { PlatformPressable } from '@react-navigation/elements';
@@ -17,8 +17,10 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
   const { width: screenWidth } = useWindowDimensions();
   const dispatch = useDispatch();
   
-  // Connect cleanly to our active target slice settings
   const currentLang = useSelector((state: any) => state.article.lang);
+  
+  // ⏱️ Track double-tap timestamps for each tab safely across renders
+  const lastPressRef = useRef<{ [key: string]: number }>({});
 
   return (
     <View style={styles.absoluteWrapper}>
@@ -55,14 +57,30 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
           const isFocused = state.index === index;
 
           const onPress = () => {
+            const now = Date.now();
+            const LAST_PRESS_TIME = lastPressRef.current[route.key] || 0;
+            
             const event = navigation.emit({
               type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
+            if (isFocused) {
+              // 🚀 DOUBLE PRESS DETECTED: Check if interval is within 300 milliseconds
+              if (now - LAST_PRESS_TIME < 300) {
+                navigation.emit({
+                  type: 'tabDoublePress',
+                  target: route.key,
+                });
+              }
+              // Update timestamp of the click reference
+              lastPressRef.current[route.key] = now;
+            } else {
+              if (!event.defaultPrevented) {
+                navigation.navigate(route.name, route.params);
+              }
+              lastPressRef.current[route.key] = now;
             }
           };
 

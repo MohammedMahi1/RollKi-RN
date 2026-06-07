@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useAppDispatch, useAppSelector } from 'hooks/store';
@@ -7,12 +7,13 @@ import BookedArticle from 'components/ui/BookedArticle';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
-export default function BookmarksScreen() {
+const BookmarksScreen = ({ navigation }: any) => {
   const dispatch = useAppDispatch();
   const { items, loading } = useAppSelector((state) => state.bookmark);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Read language state to force layout direction adjustments
+  const flashListRef = useRef<any>(null);
+
   const currentLang = useAppSelector((state) => state.article.lang || 'en');
   const isRtl = currentLang === 'ar';
 
@@ -20,6 +21,14 @@ export default function BookmarksScreen() {
     dispatch(fetchBookmarksAsync());
   }, [dispatch]);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabDoublePress', () => {
+      if (flashListRef.current) {
+        flashListRef.current.scrollToOffset({ offset: 0, animated: true });
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
   useFocusEffect(
     React.useCallback(() => {
       return () => {
@@ -43,7 +52,7 @@ export default function BookmarksScreen() {
     <SafeAreaView style={styles.container}>
       <Pressable style={{ flex: 1 }} onPress={() => setIsEditing(false)}>
         <FlashList
-          // Changing the key forces FlashList to cleanly recalculate RTL/LTR layout columns
+          ref={flashListRef} // 👈 Attach the reference hook here
           key={isRtl ? 'rtl-grid' : 'ltr-grid'}
           data={orderedItems}
           numColumns={3}
@@ -83,3 +92,5 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000000' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
+
+export default BookmarksScreen

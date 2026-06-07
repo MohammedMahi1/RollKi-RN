@@ -123,7 +123,7 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
           title,
           description: extract || 'No preview available',
           source: sanitizedImageUri || 'https://via.placeholder.com/150',
-          lang: currentLang, // Saved exactly using current locale code
+          lang: currentLang, 
         })
       );
     }
@@ -216,7 +216,7 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
           nav.navigate('ArticleScreen', {
             title,
             fallbackImage: sanitizedImageUri,
-            fallbackExtract: extract, // 👈 Add this pass-along
+            fallbackExtract: extract,
           })
         }
         style={{

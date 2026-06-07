@@ -9,9 +9,21 @@ import { useAppDispatch, useAppSelector } from 'hooks/store';
 import { articleAsyncThunk } from 'store/asyncThunk/articleAsyncThunk';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
+const Main = ({ navigation }: any) => {
+  const listRef = useRef<any>(null);
 
-const Main = () => {
-  const navigation = useNavigation();
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabDoublePress', () => {
+      if (listRef.current) {
+        // If it's a FlatList or ScrollView:
+        listRef.current.scrollToOffset ? 
+          listRef.current.scrollToOffset({ offset: 0, animated: true }) : 
+          listRef.current.scrollTo({ y: 0, animated: true });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
   const dispatch = useAppDispatch();
 
   const { data, loading: isReduxLoading } = useAppSelector((s) => s.article);
@@ -20,7 +32,6 @@ const Main = () => {
   const [h, setH] = useState<number>(0);
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const listRef = useRef<any>(null);
 
   const getApiParams = (limit: number) => ({
     action: 'query',

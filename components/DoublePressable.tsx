@@ -6,7 +6,7 @@ import { GestureHandlerRootViewProps } from 'react-native-gesture-handler/lib/ty
 
 type DoublePressableProps = {
   onDoublePress?: () => void;
-  disabled?: boolean; // Add disabled flag
+  disabled?: boolean; 
 } & GestureHandlerRootViewProps;
 
 const DoublePressable = ({ onDoublePress, disabled, children, ...rest }: DoublePressableProps) => {
@@ -14,7 +14,7 @@ const DoublePressable = ({ onDoublePress, disabled, children, ...rest }: DoubleP
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
-    .enabled(!disabled) // FIX: Blocks interaction during animation frames
+    .enabled(!disabled)
     .onEnd(() => {
       if (onDoublePress) {
         runOnJS(onDoublePress)();

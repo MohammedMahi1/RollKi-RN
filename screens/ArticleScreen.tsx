@@ -54,12 +54,10 @@ const ArticleScreen = ({ route }: any) => {
     try {
       setLoading(true);
 
-      // 🚀 THE FIX: Convert natural readable spaces into standard underscore syntax
-      // Wikipedia internally references all multi-word database page strings via underscores.
       const normalizedTitle = title ? title.trim().replace(/\s+/g, '_') : '';
 
       const res = await AXIOS.get("/w/api.php", {
-        lang: activeLang, // Safely targets 'en', 'fr', or 'ar' server clusters
+        lang: activeLang,
         params: {
           action: 'query',
           prop: 'extracts|pageimages',
@@ -67,7 +65,7 @@ const ArticleScreen = ({ route }: any) => {
           exintro: true, 
           piprop: 'original',
           explaintext: true,
-          titles: normalizedTitle, // 👈 Pass the clean, normalized token string here
+          titles: normalizedTitle,
           format: 'json',
           origin: '*',
         }

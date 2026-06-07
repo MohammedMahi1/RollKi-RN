@@ -16,7 +16,7 @@ export type BookedArticleType = {
   title: string;
   description: string | null;
   source: string | null;
-  lang: string; // 👈 1. Added explicit language property typing
+  lang: string; 
   index: number;
   isEditing: boolean;
   onLongPress: () => void;
@@ -28,7 +28,7 @@ const BookedArticle = ({
   title, 
   description, 
   source, 
-  lang, // 👈 Destructure language signature from parameters
+  lang,
   index,
   isEditing, 
   onLongPress, 
@@ -38,9 +38,8 @@ const BookedArticle = ({
   const nav = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
 
-  const isRtl = lang === 'ar'; // 👈 Check text direction context for this card item
+  const isRtl = lang === 'ar'; 
 
-  // Keep exit shared values for the clean delete transition
   const exitScale = useSharedValue(1);
   const exitOpacity = useSharedValue(1);
 
@@ -74,12 +73,11 @@ const BookedArticle = ({
     if (isEditing) {
       onCancelEditing(); 
     } else {
-      // 🚀 2. Send the exact language parameters down to the destination layout context
       nav.navigate("ArticleScreen", { 
         title, 
         fallbackImage: source,
-        fallbackExtract: description, // Pass summary preview safely
-        articleLang: lang            // Keeps the dynamic API target locked onto the card's original language node
+        fallbackExtract: description, 
+        articleLang: lang            
       });
     }
   };
@@ -106,7 +104,6 @@ const BookedArticle = ({
           style={styles.gradientOverlay}
         />
 
-        {/* 🚀 3. Adjusted style wrappers to support dynamic alignment rules based on language script */}
         <View style={[styles.textContainer, { alignItems: isRtl ? 'flex-end' : 'flex-start' }]}>
           <Span 
             fontWeight="bold" 
