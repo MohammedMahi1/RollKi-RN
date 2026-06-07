@@ -32,7 +32,6 @@ import { AXIOS } from 'api/AXIOS';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ArticleScreen = ({ route }: any) => {
-  // 📥 Destructure 'articleLang' directly from navigation route properties
   const { title, fallbackImage, fallbackExtract, articleLang } = route.params;
   const dispatch = useAppDispatch();
   const nav = useNavigation();
@@ -41,7 +40,6 @@ const ArticleScreen = ({ route }: any) => {
   const [loading, setLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // 🌍 FIX: Prioritize the saved article's layout language over global application rules
   const globalLang = useAppSelector((state) => state.article.lang || 'ar');
   const activeLang = articleLang || globalLang; 
   const isRtl = activeLang === 'ar';
@@ -56,7 +54,12 @@ const ArticleScreen = ({ route }: any) => {
     try {
       setLoading(true);
 
+      // 🚀 THE FIX: Convert natural readable spaces into standard underscore syntax
+      // Wikipedia internally references all multi-word database page strings via underscores.
+      const normalizedTitle = title ? title.trim().replace(/\s+/g, '_') : '';
+
       const res = await AXIOS.get("/w/api.php", {
+        lang: activeLang, // Safely targets 'en', 'fr', or 'ar' server clusters
         params: {
           action: 'query',
           prop: 'extracts|pageimages',
@@ -64,7 +67,7 @@ const ArticleScreen = ({ route }: any) => {
           exintro: true, 
           piprop: 'original',
           explaintext: true,
-          titles: title,
+          titles: normalizedTitle, // 👈 Pass the clean, normalized token string here
           format: 'json',
           origin: '*',
         }
@@ -76,6 +79,7 @@ const ArticleScreen = ({ route }: any) => {
       const pageId = Object.keys(pages)[0];
       const pageData = pages[pageId];
 
+      // If page ID is negative, Wikipedia returned a missing page result (-1)
       if (parseInt(pageId) < 0) {
         setArticle({
           title: title,
@@ -146,7 +150,7 @@ const ArticleScreen = ({ route }: any) => {
           title,
           description: article?.body || fallbackExtract || 'No preview available', 
           source: article?.image || fallbackImage || 'https://via.placeholder.com/150',
-          lang: activeLang, // Keeps the bookmark pinned to its correct language origin code
+          lang: activeLang,
         })
       );
     }
@@ -201,7 +205,6 @@ const ArticleScreen = ({ route }: any) => {
           <Image
             source={{
               uri: article?.image || fallbackImage,
-              headers: { 'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)' },
             }}
             style={styles.heroImage}
             contentFit="cover"
@@ -252,7 +255,6 @@ const ArticleScreen = ({ route }: any) => {
         </View>
       </ScrollView>
 
-      {/* FLOATING ACTION BOTTOM BOOKMARK BUTTON */}
       <Pressable
         onPress={handleToggleBookmark}
         style={[styles.floatingBookmarkBtn, isRtl ? { left: 24 } : { right: 24 }]}
