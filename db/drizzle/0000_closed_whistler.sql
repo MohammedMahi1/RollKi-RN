@@ -3,7 +3,6 @@ CREATE TABLE `bookmarks` (
 	`title` text NOT NULL,
 	`description` text NOT NULL,
 	`source` text NOT NULL,
+	`lang` text NOT NULL,
 	`created_at` text
 );
---> statement-breakpoint
-CREATE UNIQUE INDEX `bookmarks_title_unique` ON `bookmarks` (`title`);

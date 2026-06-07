@@ -1,7 +1,7 @@
 import { View, Pressable, useWindowDimensions, Animated, StyleSheet, Share } from 'react-native';
 import React, { useState } from 'react';
 import Span from 'components/Span';
-import { Bookmark, Compass, Share2 } from "lucide-react-native"; 
+import { Bookmark, Compass, Share2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useAppDispatch, useAppSelector } from 'hooks/store';
@@ -9,13 +9,13 @@ import { addBookmarkAsync, removeBookmarkByTitleAsync } from 'store/slices/bookm
 import DoublePressable from 'components/DoublePressable';
 import * as WebBrowser from 'expo-web-browser';
 
-import AnimatedReanimated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSequence, 
-  withTiming, 
+import AnimatedReanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
   withDelay,
-  runOnJS
+  runOnJS,
 } from 'react-native-reanimated';
 
 interface WikiArticle {
@@ -23,7 +23,7 @@ interface WikiArticle {
   ns: number;
   title: string;
   index: number;
-  thumbnail?: { source: string; width: number; height: number; };
+  thumbnail?: { source: string; width: number; height: number };
   extract?: string;
 }
 
@@ -38,21 +38,20 @@ interface SideTipProps {
   isBookmarked: boolean;
   onToggle: () => void;
   onShare: () => void;
-  onOpenBrowser: () => void; // Added browser callback prop signature
+  onOpenBrowser: () => void;
 }
 
 const SideTip = ({ isBookmarked, onToggle, onShare, onOpenBrowser }: SideTipProps) => {
   return (
-    <View style={styles.sideTipContainer}>
+    <View style={[styles.sideTipContainer, { right: 24 }]}>
       <Pressable hitSlop={12} onPress={onShare}>
-        <Share2 size={26} color={"#ffffff"}/>
+        <Share2 size={26} color={'#ffffff'} />
       </Pressable>
-      <Pressable hitSlop={12} onPress={onToggle}> 
-        <Bookmark size={26} color={"#ffffff"} fill={isBookmarked ? "#ffffff" : "transparent"}/>
+      <Pressable hitSlop={12} onPress={onToggle}>
+        <Bookmark size={26} color={'#ffffff'} fill={isBookmarked ? '#ffffff' : 'transparent'} />
       </Pressable>
-      {/* 2. Bind the browser trigger to the Compass button */}
       <Pressable hitSlop={12} onPress={onOpenBrowser}>
-        <Compass size={26} color={"#ffffff"}/>
+        <Compass size={26} color={'#ffffff'} />
       </Pressable>
     </View>
   );
@@ -64,6 +63,10 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
   const { width: screenWidth } = useWindowDimensions();
   const { title, extract, thumbnail, pageid } = item;
 
+  // Extract the active global language context
+  const currentLang = useAppSelector((state) => state.article.lang || 'ar');
+  const isRtl = currentLang === 'ar';
+
   const savedItems = useAppSelector((state) => state.bookmark.items || []);
   const isBookmarked = savedItems.some((bookmark) => bookmark.title === title);
 
@@ -74,23 +77,23 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
 
   const rawImageUri = thumbnail?.source;
   const sanitizedImageUri = rawImageUri ? decodeURIComponent(rawImageUri) : null;
-  const mediaContainerHeight = cardHeight * 0.55; 
-  const textContainerHeight = cardHeight * 0.45;  
+  const mediaContainerHeight = cardHeight * 0.55;
+  const textContainerHeight = cardHeight * 0.45;
 
   const opacity = scrollY.interpolate({
     inputRange: [(index - 1) * cardHeight, index * cardHeight, (index + 1) * cardHeight],
-    outputRange: [1, 1, 0], 
+    outputRange: [1, 1, 0],
     extrapolate: 'clamp',
   });
 
-  // Native In-App Browser Action Trigger
+  // Dynamic Browser Target matching currentLang
   const handleOpenBrowser = async () => {
     try {
-      const articleUrl = `https://en.m.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+      const articleUrl = `https://${currentLang}.m.wikipedia.org/wiki/${encodeURIComponent(title)}`;
       await WebBrowser.openBrowserAsync(articleUrl, {
         toolbarColor: '#000000',
         controlsColor: '#FFFFFF',
-        enableBarCollapsing: true, // Maximizes reading space when scrolling the webview
+        enableBarCollapsing: true,
         showTitle: true,
       });
     } catch (error) {
@@ -98,9 +101,10 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
     }
   };
 
+  // Dynamic Share Targets matching currentLang
   const handleShareArticle = async () => {
     try {
-      const articleUrl = `https://en.m.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+      const articleUrl = `https://${currentLang}.m.wikipedia.org/wiki/${encodeURIComponent(title)}`;
       await Share.share({
         message: `Check out this article on RollKi: ${title}\n\n${articleUrl}`,
         title: title,
@@ -114,12 +118,14 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
     if (isBookmarked) {
       dispatch(removeBookmarkByTitleAsync(title));
     } else {
-      dispatch(addBookmarkAsync({
-        title,
-        description: extract || 'No preview available',
-        source: sanitizedImageUri || 'https://via.placeholder.com/150',
-        lang:"en"
-      }));
+      dispatch(
+        addBookmarkAsync({
+          title,
+          description: extract || 'No preview available',
+          source: sanitizedImageUri || 'https://via.placeholder.com/150',
+          lang: currentLang, // Saved exactly using current locale code
+        })
+      );
     }
   };
 
@@ -129,26 +135,29 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
 
   const handleDoublePress = () => {
     if (isAnimating) return;
-    
+
     setIsAnimating(true);
     if (!isBookmarked) {
       handleToggleBookmark();
     }
 
     animScale.value = withSequence(
-      withTiming(1, { duration: 150 }),                    
-      withTiming(1, { duration: 100 }),                    
-      withTiming(140 / 170, { duration: 150 }),              
-      withDelay(500, withTiming(130 / 170, { duration: 200 })) 
+      withTiming(1, { duration: 150 }),
+      withTiming(1, { duration: 100 }),
+      withTiming(140 / 170, { duration: 150 }),
+      withDelay(500, withTiming(130 / 170, { duration: 200 }))
     );
 
     animOpacity.value = withSequence(
-      withTiming(1, { duration: 150 }),                    
-      withTiming(1, { duration: 100 }),                    
-      withTiming(1, { duration: 150 }),                    
-      withDelay(500, withTiming(0, { duration: 200 }, () => {
-        runOnJS(animationFinished)();                        
-      }))
+      withTiming(1, { duration: 150 }),
+      withTiming(1, { duration: 100 }),
+      withTiming(1, { duration: 150 }),
+      withDelay(
+        500,
+        withTiming(0, { duration: 200 }, () => {
+          runOnJS(animationFinished)();
+        })
+      )
     );
   };
 
@@ -160,10 +169,11 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
   });
 
   return (
-    <Animated.View style={{ backgroundColor: '#000000', height: cardHeight, width: screenWidth, opacity }}>
+    <Animated.View
+      style={{ backgroundColor: '#000000', height: cardHeight, width: screenWidth, opacity }}>
       <DoublePressable
         onDoublePress={handleDoublePress}
-        disabled={isAnimating} 
+        disabled={isAnimating}
         style={{
           backgroundColor: '#161616',
           width: '100%',
@@ -173,39 +183,77 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
           overflow: 'hidden',
           position: 'relative',
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
         }}>
-          <Image
-            source={{ uri: sanitizedImageUri as string, headers: { 'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)' } }}
-            key={pageid}
-            recyclingKey={pageid.toString()}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-            onError={(e:any) => console.log(`Image failed to load for: ${title}`, e.nativeEvent.error)}
-          />
+        <Image
+          source={{
+            uri: sanitizedImageUri as string,
+            headers: { 'User-Agent': 'RollKi/1.0 (contact: front-end developer; React Native)' },
+          }}
+          key={pageid}
+          recyclingKey={pageid.toString()}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          onError={(e: any) =>
+            console.log(`Image failed to load for: ${title}`, e)
+          }
+        />
 
         <AnimatedReanimated.View style={[styles.centerOverlay, animatedBookmarkStyle]}>
           <Bookmark size={170} color="#c5c5c5" strokeWidth={0.1} fill="#ffffff" />
         </AnimatedReanimated.View>
 
-        {/* Added Browser callback linkage */}
-        <SideTip 
-          isBookmarked={isBookmarked} 
-          onToggle={handleToggleBookmark} 
-          onShare={handleShareArticle} 
-          onOpenBrowser={handleOpenBrowser} 
+        <SideTip
+          isBookmarked={isBookmarked}
+          onToggle={handleToggleBookmark}
+          onShare={handleShareArticle}
+          onOpenBrowser={handleOpenBrowser}
         />
       </DoublePressable>
 
-      <Pressable 
-        onPress={() => nav.navigate("ArticleScreen", { title, fallbackImage: sanitizedImageUri })}
-        style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24, height: textContainerHeight, justifyContent: 'flex-start', gap: 6 }}
-      >
-        <Span style={{ fontSize: 30, color: '#FFFFFF', lineHeight: 36 }} fontWeight='bold' numberOfLines={2} ellipsizeMode="tail">
+      <Pressable
+        onPress={() =>
+          nav.navigate('ArticleScreen', {
+            title,
+            fallbackImage: sanitizedImageUri,
+            fallbackExtract: extract, // 👈 Add this pass-along
+          })
+        }
+        style={{
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 24,
+          height: textContainerHeight,
+          justifyContent: 'flex-start',
+          gap: 6,
+          alignItems: isRtl ? 'flex-end' : 'flex-start', // Container level text box alignment
+        }}>
+        <Span
+          style={{
+            fontSize: 30,
+            color: '#FFFFFF',
+            lineHeight: 36,
+            textAlign: isRtl ? 'right' : 'left', // Explicit script alignment overriding context
+          }}
+          fontWeight="bold"
+          numberOfLines={2}
+          ellipsizeMode="tail">
           {title}
         </Span>
-        <Span style={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.75)', lineHeight: 21, marginTop: 4 }} numberOfLines={40} ellipsizeMode="tail">
-          {extract || 'No preview available for this article.'}
+        <Span
+          style={{
+            fontSize: 14,
+            color: 'rgba(255, 255, 255, 0.75)',
+            lineHeight: 21,
+            marginTop: 4,
+            textAlign: isRtl ? 'right' : 'left',
+          }}
+          numberOfLines={40}
+          ellipsizeMode="tail">
+          {extract ||
+            (isRtl
+              ? 'لا يوجد معاينة متاحة لهذه المقالة.'
+              : 'No preview available for this article.')}
         </Span>
       </Pressable>
     </Animated.View>
@@ -215,9 +263,8 @@ const ArticleCard = ({ item, cardHeight, index, scrollY }: ArticleCardProps) => 
 const styles = StyleSheet.create({
   sideTipContainer: {
     position: 'absolute',
-    bottom: 24, 
-    right: 24,
-    backgroundColor: 'rgba(0,0,0,0.75)', 
+    bottom: 24,
+    backgroundColor: 'rgba(0,0,0,0.75)',
     borderRadius: 24,
     paddingHorizontal: 12,
     paddingVertical: 18,
@@ -234,7 +281,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
-  }
+  },
 });
 
 export default ArticleCard;

@@ -16,6 +16,7 @@ export type BookedArticleType = {
   title: string;
   description: string | null;
   source: string | null;
+  lang: string; // 👈 1. Added explicit language property typing
   index: number;
   isEditing: boolean;
   onLongPress: () => void;
@@ -27,6 +28,7 @@ const BookedArticle = ({
   title, 
   description, 
   source, 
+  lang, // 👈 Destructure language signature from parameters
   index,
   isEditing, 
   onLongPress, 
@@ -36,21 +38,20 @@ const BookedArticle = ({
   const nav = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
 
+  const isRtl = lang === 'ar'; // 👈 Check text direction context for this card item
+
   // Keep exit shared values for the clean delete transition
   const exitScale = useSharedValue(1);
   const exitOpacity = useSharedValue(1);
 
   useEffect(() => {
     if (isEditing) {
-      // Shaking animation completely removed here. 
-      // Only subtly scaling down the card layout to indicate edit state entry.
       exitScale.value = withTiming(0.94, { duration: 200 });
     } else {
       exitScale.value = withTiming(1, { duration: 150 });
     }
   }, [isEditing]);
 
-  // Performance optimized clean style (No rotations or loops computed here)
   const animatedStyle = useAnimatedStyle(() => {
     return {
       opacity: exitOpacity.value,
@@ -73,7 +74,13 @@ const BookedArticle = ({
     if (isEditing) {
       onCancelEditing(); 
     } else {
-      nav.navigate("ArticleScreen", { title, fallbackImage: source });
+      // 🚀 2. Send the exact language parameters down to the destination layout context
+      nav.navigate("ArticleScreen", { 
+        title, 
+        fallbackImage: source,
+        fallbackExtract: description, // Pass summary preview safely
+        articleLang: lang            // Keeps the dynamic API target locked onto the card's original language node
+      });
     }
   };
 
@@ -99,9 +106,21 @@ const BookedArticle = ({
           style={styles.gradientOverlay}
         />
 
-        <View style={styles.textContainer}>
-          <Span fontWeight="bold" style={styles.titleText} numberOfLines={1}>{title}</Span>
-          <Span style={styles.descriptionText} numberOfLines={1}>{description}</Span>
+        {/* 🚀 3. Adjusted style wrappers to support dynamic alignment rules based on language script */}
+        <View style={[styles.textContainer, { alignItems: isRtl ? 'flex-end' : 'flex-start' }]}>
+          <Span 
+            fontWeight="bold" 
+            style={[styles.titleText, { textAlign: isRtl ? 'right' : 'left' }]} 
+            numberOfLines={1}
+          >
+            {title}
+          </Span>
+          <Span 
+            style={[styles.descriptionText, { textAlign: isRtl ? 'right' : 'left' }]} 
+            numberOfLines={1}
+          >
+            {description || (isRtl ? 'لا توجد معاينة متاحة.' : 'No preview available.')}
+          </Span>
         </View>
       </Pressable>
 
@@ -153,11 +172,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     lineHeight: 18,
+    width: '100%',
   },
   descriptionText: {
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 11,
     lineHeight: 14,
+    width: '100%',
   },
   deleteBadge: {
     position: 'absolute',

@@ -1,5 +1,11 @@
 import axios from "axios";
-import { store } from "store/store";
+
+// Extend Axios's internal configuration interface to support our custom lang prop safely
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    lang?: "ar" | "en" | "fr";
+  }
+}
 
 export const AXIOS = axios.create({
   headers: {
@@ -8,8 +14,7 @@ export const AXIOS = axios.create({
 });
 
 AXIOS.interceptors.request.use((config) => {
-  const state = store.getState();
-  const lang = state.article?.lang || "ar";
+  const lang = config.lang || "ar";
 
   config.baseURL = `https://${lang}.wikipedia.org`;
 

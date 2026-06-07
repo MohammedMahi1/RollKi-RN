@@ -17,16 +17,16 @@ const initialState: InitialStateType = {
   data: [],
   loading: false,
   error: null,
-  lang: "ar"
+  lang: "ar" // Defaults safely to Arabic
 };
 
 const articleSlice = createSlice({
-  name: 'articleSlice',
+  name: 'article', // Shortened to 'article' to cleanly map to state.article.lang selectors
   initialState,
   reducers: {
     setLanguage: (state, action: PayloadAction<LangType>) => {
       state.lang = action.payload;
-      state.data = [];   // Flushes out previous language data streams
+      state.data = [];   // Flushes out previous language data streams to avoid mixups
       state.pages = {};  
     }
   },
