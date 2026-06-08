@@ -31,13 +31,13 @@ export const fetchBookmarksAsync = createAsyncThunk(
 // Accept language context variable fields dynamically on creation
 export const addBookmarkAsync = createAsyncThunk(
   'bookmark/addBookmark',
-  async (article: { title: string; description?: string; source?: string; lang: "ar" | "en" | "fr" }, { rejectWithValue }) => {
+  async (article: { title: string; description: string; source: string; lang: "ar" | "en" | "fr" }, { rejectWithValue }) => {
     try {
       const newBookmark: Bookmark = {
         id: Crypto.randomUUID(),
         title: article.title,
-        description: article.description || null,
-        source: article.source || null,
+        description: article.description ,
+        source: article.source,
         lang: article.lang, // Persisted explicitly to DB schema row
         createdAt: new Date().toISOString(),
       };

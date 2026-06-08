@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useLinkBuilder } from '@react-navigation/native';
 import { PlatformPressable } from '@react-navigation/elements';
@@ -9,6 +9,9 @@ import { setLanguage } from 'store/slices/articleSlice';
 import Main from 'screens/Main';
 import BookmarksScreen from 'screens/BookmarksScreen';
 import { DropMenu } from 'components/ui/DropMenu';
+import { db } from 'db';
+import { bookmarksTable } from 'db/schema';
+import ClearCacheModal from 'components/ui/ClearCacheModal';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -19,9 +22,9 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
   
   const currentLang = useSelector((state: any) => state.article.lang);
   
-  // ⏱️ Track double-tap timestamps for each tab safely across renders
   const lastPressRef = useRef<{ [key: string]: number }>({});
 
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   return (
     <View style={styles.absoluteWrapper}>
       {/* LANGUAGE SELECTION DROPDOWN */}
@@ -66,15 +69,13 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
               canPreventDefault: true,
             });
 
-            if (isFocused) {
-              // 🚀 DOUBLE PRESS DETECTED: Check if interval is within 300 milliseconds
+            if (isFocused) { 
               if (now - LAST_PRESS_TIME < 300) {
                 navigation.emit({
                   type: 'tabDoublePress',
                   target: route.key,
                 });
               }
-              // Update timestamp of the click reference
               lastPressRef.current[route.key] = now;
             } else {
               if (!event.defaultPrevented) {
@@ -108,8 +109,7 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
           );
         })}
       </View>
-
-      {/* OPTIONS EXTENSION DROPDOWN */}
+        {/* OPTIONS DROPDOWN */}
       <DropMenu>
         <DropMenu.Trigger style={[styles.btnTab, { right: 24 }]}>
           <EllipsisVertical color="#ffffff" size={22} />
@@ -117,10 +117,23 @@ export function MyTabBar({ state, descriptors, navigation }: any) {
         <DropMenu.Content>
           <DropMenu.Header title="Options" />
           <DropMenu.Divider />
-          <DropMenu.Item label="Settings" onPress={() => console.log('Settings Tapped')} />
-          <DropMenu.Item label="Clear Cache" onPress={() => console.log('Clear Cache Tapped')} />
+          <DropMenu.Item label="Settings" onPress={() => console.log('Settings Tapped')} /> 
+          <DropMenu.Item label="Clear Cache" onPress={() => setIsConfirmVisible(true)} />
         </DropMenu.Content>
       </DropMenu>
+ 
+      <ClearCacheModal
+        visible={isConfirmVisible}
+        onClose={() => setIsConfirmVisible(false)}
+        onConfirm={async () => {
+          try {
+            await db.delete(bookmarksTable)
+            console.log('Cache cleanly wiped out from local storage.');
+          } catch (error) {
+            console.error('Error clearing cache:', error);
+          }
+        }}
+      />
     </View>
   );
 }

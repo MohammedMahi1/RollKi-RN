@@ -50,7 +50,7 @@ const BookmarksScreen = ({ navigation }: any) => {
   const nav = useNavigation<any>();
   return (
     <SafeAreaView style={styles.container}>
-      <Pressable style={{ flex: 1 }} onPress={() => setIsEditing(false)}>
+      <Pressable style={{ flex: 1, }} onPress={() => setIsEditing(false)}>
         <FlashList
           ref={flashListRef} // 👈 Attach the reference hook here
           key={isRtl ? 'rtl-grid' : 'ltr-grid'}
@@ -59,9 +59,7 @@ const BookmarksScreen = ({ navigation }: any) => {
           keyExtractor={(item) => item.id}
           extraData={isEditing}
           removeClippedSubviews={true}
-          contentContainerStyle={{
-            direction: isRtl ? 'rtl' : 'ltr',
-          }}
+          contentContainerStyle={{paddingBottom:80}}
           renderItem={({ item, index }) => (
             <BookedArticle
               title={item.title}
@@ -77,7 +75,7 @@ const BookmarksScreen = ({ navigation }: any) => {
           )}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={{ color: '#888' }}>
+              <Text style={{ color: '#888' ,alignSelf: 'center', fontSize: 16 ,alignItems:"center",justifyContent:"center"}}>
                 {isRtl ? 'لا توجد مقالات محفوظة بعد.' : 'No saved bookmarks yet.'}
               </Text>
             </View>
